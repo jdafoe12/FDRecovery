@@ -5,6 +5,7 @@ from SuperBlock import SuperBlock
 from Decoder import *
 from Journal import *
 
+
 class ReadJournal:
 
     def __init__(self, diskName):
@@ -60,7 +61,6 @@ class ReadJournal:
         return blockTypeMap
 
 
-
     def readFileSystemJournal(self):
 
         superBlock = SuperBlock(self.diskName)
@@ -76,14 +76,14 @@ class ReadJournal:
         journalBlockNum = 0
         deleteLast = False
         hasCommitBlock = True
-        # an entry is a 3-tuple(fileBlockNum, numBlocks, blockNum), these are extent entries which specify the block numbers of the journal
+        # an entry is a extent entry which specify the block numbers of the journal
         for entry in fileSystemJournalInode.entries:
 
             disk = open(self.diskName, "rb")
-            disk.seek(superBlock.getBlockSize() * entry[2])
+            disk.seek(superBlock.getBlockSize() * entry.blockNum)
 
             # for each block in entry
-            for i in range(0, entry[1]):
+            for i in range(0, entry.numBlocks):
                 block = disk.read(superBlock.getBlockSize())
 
                 # if this block in the journal is a descriptor block
@@ -121,7 +121,6 @@ class ReadJournal:
         return transactionList
 
 
-
     def readJournalBlock(self, journalBlockNum):
 
         superBlock = SuperBlock(self.diskName)
@@ -129,12 +128,12 @@ class ReadJournal:
 
         blockEntry = ()
         for entry in fileSystemJournalInode.entries:
-            if entry[0] + entry[1] > journalBlockNum:
+            if entry.fileBlockNum + entry.numBlocks > journalBlockNum:
                 blockEntry = entry
 
 
         disk = open(self.diskName, "rb")
-        disk.seek(superBlock.getBlockSize() * (blockEntry[2] + (journalBlockNum - blockEntry[0])))
+        disk.seek(superBlock.getBlockSize() * (blockEntry.blockNum + (journalBlockNum - blockEntry.fileBlockNum)))
 
         data = disk.read(superBlock.getBlockSize())
 

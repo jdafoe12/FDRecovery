@@ -5,7 +5,9 @@ from Decoder import *
 from Journal import *
 from ReadJournal import *
 
+
 class FileRecovery:
+
 
     def recoverFiles(self, diskName, transactions: list, deletedInodes: list, numToRecover, filePath):
 
@@ -18,14 +20,14 @@ class FileRecovery:
 
         toRecover = deletedInodes[0:numToRecover]
 
-        numRecovered = 0
 
+        numRecovered = 0
         for deletedInode in toRecover:
             for transaction in transactions:
-
+                
                 journalBlockNum = transaction.journalBlockNum
-                breakFlag = False
 
+                breakFlag = False
                 for dataBlock in transaction.dataBlocks:
 
                     if dataBlock[0] == deletedInode[0]:
@@ -41,9 +43,9 @@ class FileRecovery:
 
                             for entry in inode.entries:
                                 disk = open(diskName, "rb")
-                                disk.seek(superBlock.getBlockSize() * entry[2])
+                                disk.seek(superBlock.getBlockSize() * entry.blockNum)
 
-                                for i in range(0, entry[1]):
+                                for i in range(0, entry.numBlocks):
                                     recoveredFile.write(disk.read(superBlock.getBlockSize()))
 
                             breakFlag = True

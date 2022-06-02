@@ -1,6 +1,7 @@
 # class JournalSuperBlock contains journalBlockSize, numBlocks, firstLogBlock
 from Decoder import *
 
+
 class JournalSuperBlock:
     print()
 

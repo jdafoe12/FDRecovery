@@ -3,16 +3,19 @@
 class Decoder:
 
     def leBytesToDecimal(self, data, lower, upper):
+
         num = 0
         count = 0
         for i in range(lower, upper + 1):
             if count > 0:
                 num += (data[i] * pow(16, count))
+
             else:
                 num += data[i]
-            count += 2
-        return num
 
+            count += 2
+
+        return num
 
 
     def leBytesToDecimalLowerAndUpper(self, data, lowerLower, lowerUpper, upperLower, upperUpper):
@@ -32,18 +35,18 @@ class Decoder:
         return decoder.leBytesToDecimal(newBytes, 0, len(newBytes) - 1)
 
 
-
     def beBytesToDecimal(self, data, lower, upper):
+
         num = 0
         count = (upper - lower) * 2
         for i in range(lower, upper + 1):
             if count > 0:
                 num += (data[i] * pow(16, count))
+
             else:
                 num += data[i]
+
             count -= 2
+
         return num
-
-
-        
 
