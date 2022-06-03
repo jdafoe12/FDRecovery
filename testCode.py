@@ -6,7 +6,7 @@ from Inode import Inode
 from ReadJournal import *
 from SuperBlock import SuperBlock
 from ExtentNode import *
-from fileRecovery import *
+from FileRecovery import *
 
 readJournal = ReadJournal("/dev/sda5")
 

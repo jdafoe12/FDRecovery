@@ -104,13 +104,14 @@ class ReadJournal:
                         deleteLast = True
 
                 # if this block in the journal is the commit block for the current transaction, set the commit time
-                elif (decoder.beBytesToDecimal(block, 0, 3) == 3225106840) and (decoder.beBytesToDecimal(block, 4, 7) == 2) and (decoder.beBytesToDecimal(block, 8, 11) == transactionList[-1].transactionNum):
-                    transactionList[-1].commitTime = decoder.beBytesToDecimal(block, 48, 55)
-                    hasCommitBlock = True
+                elif len(transactionList) > 0:
+                    if (decoder.beBytesToDecimal(block, 0, 3) == 3225106840) and (decoder.beBytesToDecimal(block, 4, 7) == 2) and (decoder.beBytesToDecimal(block, 8, 11) == transactionList[-1].transactionNum):
+                        transactionList[-1].commitTime = decoder.beBytesToDecimal(block, 48, 55)
+                        hasCommitBlock = True
 
-                # if this block in the journal is a commit block, but not for the current transaction, remove the transaction
-                elif (decoder.beBytesToDecimal(block, 0, 3) == 3225106840) and (decoder.beBytesToDecimal(block, 4, 7) == 2) and (decoder.beBytesToDecimal(block, 8, 11) != transactionList[-1].transactionNum):
-                    deleteLast = True
+                    # if this block in the journal is a commit block, but not for the current transaction, remove the transaction
+                    elif (decoder.beBytesToDecimal(block, 0, 3) == 3225106840) and (decoder.beBytesToDecimal(block, 4, 7) == 2) and (decoder.beBytesToDecimal(block, 8, 11) != transactionList[-1].transactionNum):
+                        deleteLast = True
 
                 journalBlockNum += 1
 

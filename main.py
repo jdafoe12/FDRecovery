@@ -1,10 +1,19 @@
 
 from ReadJournal import *
 from ExtentNode import *
-from fileRecovery import *
+from FileRecovery import *
+import Disks
 
 
 fileRecovery = FileRecovery()
+
+print("select from availible disk file paths: ", end="")
+
+disks = Disks.getDisks()
+
+for disk in disks:
+    print(disk.diskPath, end=" ")
+print("\n")
 
 diskName = input("File path of disk: ")
 readJournal = ReadJournal(diskName)
