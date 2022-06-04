@@ -1,5 +1,5 @@
-
 import re
+
 
 class Disk:
 
@@ -9,7 +9,6 @@ class Disk:
 
 
 def getDisks():
-
     # /proc/mounts contains data on all mounted disk partitions
     mounts = open("/proc/mounts", "r")
     disks = mounts.readlines()
