@@ -1,7 +1,5 @@
+import tkinter.filedialog
 
-
-from ReadJournal import *
-from ExtentNode import *
 from FileRecovery import *
 import Disks
 import time
@@ -12,11 +10,14 @@ import tkinter as tk
 class App():
     def __init__(self, master):
 
+        self.transactions = None
+        self.numRecovered = 0
         # setup frame
-        topFrame = tk.Frame(master=master, height=50)
-        topFrame.columnconfigure([0, 1, 2], weight=1)
-        topFrame.rowconfigure([0, 1, 2], weight=1)
-        topFrame.pack(fill=tk.BOTH, side=tk.TOP, expand=True)
+
+        self.topFrame = tk.Frame(master=master, height=50)
+        self.topFrame.columnconfigure([0, 1, 2], weight=1)
+        self.topFrame.rowconfigure([0, 1, 2, 3], weight=1)
+        self.topFrame.pack(fill=tk.BOTH, side=tk.TOP, expand=True)
 
 
         # get a list of disks
@@ -29,15 +30,15 @@ class App():
 
         # disk selector
         diskVar = tk.StringVar(master, "select disk")
-        diskOptions = tk.OptionMenu(topFrame, diskVar, *diskPaths, command=self.getDeletedFiles)
+        diskOptions = tk.OptionMenu(self.topFrame, diskVar, *diskPaths, command=self.getDeletedFiles)
         diskOptions.grid(column=0, row=0, columnspan=2, sticky="w")
 
         # label, prompting user to choose files to recover
-        labelSelect = tk.Label(master=topFrame, anchor=tk.CENTER, text="Select Files to Recover:")
+        labelSelect = tk.Label(master=self.topFrame, anchor=tk.CENTER, text="Select Files to Recover:")
         labelSelect.grid(column=1, row=0, sticky="nsew")
 
         # help button opens a help window
-        helpButton = tk.Button(master=topFrame, text="help")
+        helpButton = tk.Button(master=self.topFrame, text="help")
         helpButton.grid(column=2, row=0, sticky="e")
 
 
@@ -45,34 +46,44 @@ class App():
         self.deletedInodes = []
         self.deletedFiles = []
 
-        self.selectDeletedFiles0 = tk.Listbox(master=topFrame, selectmode=tk.MULTIPLE, height=30)
-        self.selectDeletedFiles1 = tk.Listbox(master=topFrame, selectmode=tk.MULTIPLE, height=30)
-        self.selectDeletedFiles2 = tk.Listbox(master=topFrame, selectmode=tk.MULTIPLE, height=30)
+        self.selectDeletedFiles0 = tk.Listbox(master=self.topFrame, selectmode=tk.MULTIPLE, height=30)
+        self.selectDeletedFiles1 = tk.Listbox(master=self.topFrame, selectmode=tk.MULTIPLE, height=30)
+        self.selectDeletedFiles2 = tk.Listbox(master=self.topFrame, selectmode=tk.MULTIPLE, height=30)
         self.selectDeletedFiles0.grid(column=0, row=1, sticky="nesw")
         self.selectDeletedFiles1.grid(column=1, row=1, sticky="nesw")
         self.selectDeletedFiles2.grid(column=2, row=1, sticky="nesw")
 
-
-        getOutputDirectoryButton = tk.Button(master=topFrame, text="Select output directory")
+        self.outputDirectory = ""
+        getOutputDirectoryButton = tk.Button(master=self.topFrame, text="Select output directory", command=self.getOutputDirectory)
         getOutputDirectoryButton.grid(column=0, row=2, sticky="w")
 
-        recoveryButton = tk.Button(master=topFrame, text="Recover")
+        self.outputDirectoryLabel = tk.Label(master=self.topFrame, text="Output dir: ")
+        self.outputDirectoryLabel.grid(column=1, row=2, sticky = "w")
+
+        recoveryButton = tk.Button(master=self.topFrame, text="Recover", command=self.recover)
         recoveryButton.grid(column=2, row=2, sticky="e")
+
+        self.recoveredLabel = tk.Label(master=self.topFrame, text=f"Recovered {self.numRecovered} files")
+        self.recoveredLabel.grid(column=1, row=3, sticky="w")
 
 
     def getDeletedFiles(self, disk):
 
         if self.currentDisk != disk:
+            self.topFrame.config(cursor="exchange")
+            self.topFrame.update_idletasks()
             self.currentDisk = disk
 
             fileRecovery = FileRecovery()
             readJournal = ReadJournal(disk)
-            transactions = readJournal.readFileSystemJournal()
-            self.deletedInodes = fileRecovery.getDeletedInodes(disk, transactions)
+            self.transactions = readJournal.readFileSystemJournal()
+            self.deletedInodes = fileRecovery.getDeletedInodes(disk, self.transactions)
             self.deletedFiles = []
             for inode in self.deletedInodes:
                 self.deletedFiles.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(inode[2])))
             self.updateBoxes()
+            self.topFrame.config(cursor="")
+            self.topFrame.update_idletasks()
         else:
             return
 
@@ -89,7 +100,25 @@ class App():
         self.selectDeletedFiles1.insert(0, *deletedFiles1)
         self.selectDeletedFiles2.insert(0, *deletedFiles2)
 
+    def getOutputDirectory(self):
 
+        self.outputDirectory = tk.filedialog.askdirectory(title="Select Output Directory", initialdir="/home")
+        self.outputDirectoryLabel.config(text=f"Output dir: {self.outputDirectory}")
+
+    def recover(self):
+        fileRecovery = FileRecovery()
+
+        toRecover = []
+
+        for index in self.selectDeletedFiles0.curselection():
+            toRecover.append(self.deletedInodes[index])
+        for index in self.selectDeletedFiles1.curselection():
+            toRecover.append(self.deletedInodes[index + floor(len(self.deletedFiles) / 3)])
+        for index in self.selectDeletedFiles2.curselection():
+            toRecover.append(self.deletedInodes[index + (len(self.deletedFiles) - floor(len(self.deletedFiles) / 3))])
+
+        self.numRecovered += fileRecovery.recoverFiles(self.currentDisk, self.transactions, toRecover, len(toRecover), self.outputDirectory)
+        self.recoveredLabel.config(text=f"Recovered {self.numRecovered} files")
 
 
 def main():

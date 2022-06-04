@@ -1,3 +1,4 @@
+import time
 
 from Inode import Inode
 from SuperBlock import SuperBlock
@@ -39,7 +40,7 @@ class FileRecovery:
 
                             numRecovered += 1
 
-                            recoveredFile = open("%s/recoveredFile%d" % (filePath, numRecovered), "ab")
+                            recoveredFile = open("%s/recoveredFile_%s" % (filePath, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(deletedInode[2]))), "ab")
 
                             for entry in inode.entries:
                                 disk = open(diskName, "rb")
