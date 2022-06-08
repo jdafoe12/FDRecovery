@@ -26,7 +26,7 @@ class FileRecovery:
         for deletedInode in toRecover:
             for transaction in transactions:
                 
-                journalBlockNum = transaction.journalBlockNum
+                journalBlockNum = transaction.journalBlockNum + 1
 
                 breakFlag = False
                 for dataBlock in transaction.dataBlocks:

@@ -12,8 +12,8 @@ class App():
 
         self.transactions = None
         self.numRecovered = 0
-        # setup frame
 
+        # setup frame
         self.topFrame = tk.Frame(master=master, height=50)
         self.topFrame.columnconfigure([0, 1, 2], weight=1)
         self.topFrame.rowconfigure([0, 1, 2, 3], weight=1)
@@ -111,11 +111,11 @@ class App():
         toRecover = []
 
         for index in self.selectDeletedFiles0.curselection():
-            toRecover.append(self.deletedInodes[index])
+            toRecover.append(self.deletedInodes[index - 1])
         for index in self.selectDeletedFiles1.curselection():
-            toRecover.append(self.deletedInodes[index + floor(len(self.deletedFiles) / 3)])
+            toRecover.append(self.deletedInodes[(index - 1) + floor(len(self.deletedFiles) / 3)])
         for index in self.selectDeletedFiles2.curselection():
-            toRecover.append(self.deletedInodes[index + (len(self.deletedFiles) - floor(len(self.deletedFiles) / 3))])
+            toRecover.append(self.deletedInodes[(index - 1) + ((len(self.deletedFiles) - floor(len(self.deletedFiles) / 3)))])
 
         self.numRecovered += fileRecovery.recoverFiles(self.currentDisk, self.transactions, toRecover, len(toRecover), self.outputDirectory)
         self.recoveredLabel.config(text=f"Recovered {self.numRecovered} files")
