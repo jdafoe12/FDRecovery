@@ -14,6 +14,7 @@ class Transaction:
 
         # initialize transaction data fields
         self.transactionNum = decoder.beBytesToDecimal(descriptorData, 8, 11)
+        # this is the journal block num of the descriptor block
         self.journalBlockNum = journalBlockNum
         self.commitTime = 0
         # Transaction type 0 is deletion, 1 is useful, 2 is not useful
@@ -26,7 +27,7 @@ class Transaction:
         distance = 28
         numBlocks = 0
         # loop goes through all block tags within the descriptor
-        while (distance < len(descriptorData) - 1) and (decoder.beBytesToDecimal(descriptorData, offset, distance) != 0):
+        while (distance < len(descriptorData)) and (decoder.beBytesToDecimal(descriptorData, offset, distance) != 0):
             
             blockNum = decoder.beBytesToDecimal(descriptorData, offset, offset + 3)
 

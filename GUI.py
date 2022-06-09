@@ -60,6 +60,7 @@ class App():
         self.outputDirectoryLabel = tk.Label(master=self.topFrame, text="Output dir: ")
         self.outputDirectoryLabel.grid(column=1, row=2, sticky = "w")
 
+        # Button to recover the files
         recoveryButton = tk.Button(master=self.topFrame, text="Recover", command=self.recover)
         recoveryButton.grid(column=2, row=2, sticky="e")
 
@@ -80,7 +81,7 @@ class App():
             self.deletedInodes = fileRecovery.getDeletedInodes(disk, self.transactions)
             self.deletedFiles = []
             for inode in self.deletedInodes:
-                self.deletedFiles.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(inode[2])))
+                self.deletedFiles.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(inode[2])) + f"_inode{inode[0]}_{inode[1]}")
             self.updateBoxes()
             self.topFrame.config(cursor="")
             self.topFrame.update_idletasks()
@@ -111,11 +112,11 @@ class App():
         toRecover = []
 
         for index in self.selectDeletedFiles0.curselection():
-            toRecover.append(self.deletedInodes[index - 1])
+            toRecover.append(self.deletedInodes[index])
         for index in self.selectDeletedFiles1.curselection():
-            toRecover.append(self.deletedInodes[(index - 1) + floor(len(self.deletedFiles) / 3)])
+            toRecover.append(self.deletedInodes[(index) + floor(len(self.deletedFiles) / 3)])
         for index in self.selectDeletedFiles2.curselection():
-            toRecover.append(self.deletedInodes[(index - 1) + ((len(self.deletedFiles) - floor(len(self.deletedFiles) / 3)))])
+            toRecover.append(self.deletedInodes[(index) + ((len(self.deletedFiles) - floor(len(self.deletedFiles) / 3)))])
 
         self.numRecovered += fileRecovery.recoverFiles(self.currentDisk, self.transactions, toRecover, len(toRecover), self.outputDirectory)
         self.recoveredLabel.config(text=f"Recovered {self.numRecovered} files")

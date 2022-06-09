@@ -15,11 +15,11 @@ class ReadJournal:
     def getBlockTypeMap(self, superBlock: SuperBlock):
 
         # initialize constant variables
-        blockSize = superBlock.getBlockSize()
-        blocksPerGroup = superBlock.getBlocksPerGroup()
-        inodesPerGroup = superBlock.getInodesPerGroup()
-        inodeSize = superBlock.getInodeSize()
-        numDescriptorsPerBlock = (blockSize / superBlock.getGroupDescriptorSize())
+        blockSize = superBlock.blockSize
+        blocksPerGroup = superBlock.blocksPerGroup
+        inodesPerGroup = superBlock.inodesPerGroup
+        inodeSize = superBlock.inodeSize
+        numDescriptorsPerBlock = (blockSize / superBlock.groupDescriptorSize)
 
 
         blockTypeMap = {}
@@ -29,11 +29,11 @@ class ReadJournal:
         descriptorBlockNum = 1
         descriptorNumInBlock = 0
 
-        for descriptorNum in range(0, int(superBlock.getNumBlocks() / blocksPerGroup)):
+        for descriptorNum in range(0, int(superBlock.numBlocks / blocksPerGroup)):
 
             groupDescriptor = GroupDescriptor(self.diskName, descriptorNum, superBlock)
 
-            inodeTableLoc = groupDescriptor.getInodeTableLoc()
+            inodeTableLoc = groupDescriptor.inodeTableLoc
 
 
             # block range of inode table is ((inodesPerGroup * InodeSize) / blockSize) rounded up
@@ -41,11 +41,11 @@ class ReadJournal:
                 blockTypeMap.update({iTableBlockNum:"iTableBlock"})
 
             # block range of data bitmap is (NumBlocksPerGroup / (BlockSize * 8)) rounded up
-            for dBitmapBlockNum in range(groupDescriptor.getBlockBitMapLoc(), groupDescriptor.getBlockBitMapLoc() + ceil(blocksPerGroup / (blockSize * 8))):
+            for dBitmapBlockNum in range(groupDescriptor.blockBitMapLoc, groupDescriptor.blockBitMapLoc + ceil(blocksPerGroup / (blockSize * 8))):
                 blockTypeMap.update({dBitmapBlockNum:"dBitmapBlock"})
 
             # block range of inode bitmap is (NumInodesPerGroup / (BlockSize * 8)) rounded up
-            for iBitmapBlockNum in range(groupDescriptor.getInodeBitMapLoc(), groupDescriptor.getInodeBitMapLoc() + ceil(inodesPerGroup / (blockSize * 8))):
+            for iBitmapBlockNum in range(groupDescriptor.inodeBitMapLoc, groupDescriptor.inodeBitMapLoc + ceil(inodesPerGroup / (blockSize * 8))):
                 blockTypeMap.update({iBitmapBlockNum:"iBitmapBlock"})
 
             # block group descriptors start at block 1 and go to block ((numBlocks / BlocksPerGroup) / (BlockSize / GroupDescriptorSize))
@@ -68,10 +68,10 @@ class ReadJournal:
 
         blockTypeMap = self.getBlockTypeMap(superBlock)
 
-        fileSystemJournalInode = Inode(self.diskName, superBlock.getJournalInode(), superBlock, False)
+        fileSystemJournalInode = Inode(self.diskName, superBlock.journalInode, superBlock, False)
 
         
-        transactionList: "list[Transaction]" = []
+        transactionList = []
 
         journalBlockNum = 0
         deleteLast = False
@@ -80,11 +80,11 @@ class ReadJournal:
         for entry in fileSystemJournalInode.entries:
 
             disk = open(self.diskName, "rb")
-            disk.seek(superBlock.getBlockSize() * entry.blockNum)
+            disk.seek(superBlock.blockSize * entry.blockNum)
 
             # for each block in entry
             for i in range(0, entry.numBlocks):
-                block = disk.read(superBlock.getBlockSize())
+                block = disk.read(superBlock.blockSize)
 
                 # if this block in the journal is a descriptor block
                 if (decoder.beBytesToDecimal(block, 0, 3) == 3225106840) and (decoder.beBytesToDecimal(block, 4, 7) == 1):
@@ -118,6 +118,7 @@ class ReadJournal:
 
             disk.close
 
+        transactionList.sort(key=lambda transaction: -transaction.transactionNum)
 
         return transactionList
 
@@ -125,7 +126,7 @@ class ReadJournal:
     def readJournalBlock(self, journalBlockNum):
 
         superBlock = SuperBlock(self.diskName)
-        fileSystemJournalInode = Inode(self.diskName, superBlock.getJournalInode(), superBlock, False)
+        fileSystemJournalInode = Inode(self.diskName, superBlock.journalInode, superBlock, False)
 
         blockEntry = ()
         for entry in fileSystemJournalInode.entries:
@@ -134,9 +135,9 @@ class ReadJournal:
 
 
         disk = open(self.diskName, "rb")
-        disk.seek(superBlock.getBlockSize() * (blockEntry.blockNum + (journalBlockNum - blockEntry.fileBlockNum)))
+        disk.seek(superBlock.blockSize * (blockEntry.blockNum + (journalBlockNum - blockEntry.fileBlockNum)))
 
-        data = disk.read(superBlock.getBlockSize())
+        data = disk.read(superBlock.blockSize)
 
         disk.close()
 

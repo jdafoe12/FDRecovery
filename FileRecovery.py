@@ -15,10 +15,6 @@ class FileRecovery:
         superBlock = SuperBlock(diskName)
         readJournal = ReadJournal(diskName)
 
-        # sort data by most recent
-        transactions.sort(key=lambda transaction: -transaction.transactionNum)
-        deletedInodes.sort(key=lambda inode: -inode[2])
-
         toRecover = deletedInodes[0:numToRecover]
 
 
@@ -40,14 +36,14 @@ class FileRecovery:
 
                             numRecovered += 1
 
-                            recoveredFile = open("%s/recoveredFile_%s" % (filePath, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(deletedInode[2]))), "ab")
+                            recoveredFile = open("%s/recoveredFile_%s" % (filePath, (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(deletedInode[2])) + f"_num_{numRecovered}")), "ab")
 
                             for entry in inode.entries:
                                 disk = open(diskName, "rb")
-                                disk.seek(superBlock.getBlockSize() * entry.blockNum)
+                                disk.seek(superBlock.blockSize * entry.blockNum)
 
                                 for i in range(0, entry.numBlocks):
-                                    recoveredFile.write(disk.read(superBlock.getBlockSize()))
+                                    recoveredFile.write(disk.read(superBlock.blockSize))
 
                             breakFlag = True
                             break
@@ -86,6 +82,8 @@ class FileRecovery:
 
                 blockBuffer += 1
 
+        deletedInodes.sort(key=lambda inode: -inode[2])
+
         return deletedInodes
 
 
@@ -93,7 +91,7 @@ class FileRecovery:
 
         deletedInodes: list = []
 
-        numInodesInBlock = floor(superBlock.getBlockSize() / superBlock.getInodeSize())
+        numInodesInBlock = floor(superBlock.blockSize / superBlock.inodeSize)
 
         for inodeNum in range(0, numInodesInBlock):
 

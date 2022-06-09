@@ -7,25 +7,17 @@ class GroupDescriptor:
 
     def __init__(self, diskName, groupNum, superBlock: SuperBlock):
 
-        groupDescriptorTableOffSet = (superBlock.getBlockSize() * (superBlock.getBlocksPerGroup() + 1))
-        groupOffSet = groupNum * superBlock.getGroupDescriptorSize()
+        groupDescriptorTableOffSet = (superBlock.blockSize * (superBlock.blocksPerGroup + 1))
+        groupOffSet = groupNum * superBlock.groupDescriptorSize
 
         disk = open(diskName, "rb")
         disk.seek(groupDescriptorTableOffSet + groupOffSet)
-        data = disk.read(superBlock.getGroupDescriptorSize())
+        data = disk.read(superBlock.groupDescriptorSize)
 
         decoder = Decoder()
 
         # set group descriptor data fields
-        self.__inodeTableLoc = decoder.leBytesToDecimalLowerAndUpper(data, 8, 11, 40, 43)
-        self.__inodeBitMapLoc = decoder.leBytesToDecimalLowerAndUpper(data, 4, 7, 36, 39)
-        self.__blockBitMapLoc = decoder.leBytesToDecimalLowerAndUpper(data, 0, 3, 32, 35)
+        self.inodeTableLoc = decoder.leBytesToDecimalLowerAndUpper(data, 8, 11, 40, 43)
+        self.inodeBitMapLoc = decoder.leBytesToDecimalLowerAndUpper(data, 4, 7, 36, 39)
+        self.blockBitMapLoc = decoder.leBytesToDecimalLowerAndUpper(data, 0, 3, 32, 35)
 
-    def getInodeTableLoc(self):
-        return self.__inodeTableLoc
-
-    def getInodeBitMapLoc(self):
-        return self.__inodeBitMapLoc
-
-    def getBlockBitMapLoc(self):
-        return self.__blockBitMapLoc
