@@ -64,10 +64,12 @@ class ReadJournal:
 
     def readFileSystemJournal(self):
 
+        # flush filesystem cache
         os.sync()
         drop_caches = open("/proc/sys/vm/drop_caches", "w")
         drop_caches.write("3")
         drop_caches.close()
+
 
         superBlock = SuperBlock(self.diskName)
         decoder = Decoder()
