@@ -1,4 +1,5 @@
 from math import ceil, floor
+import os
 from GroupDescriptor import GroupDescriptor
 from Inode import Inode
 from SuperBlock import SuperBlock
@@ -63,6 +64,11 @@ class ReadJournal:
 
     def readFileSystemJournal(self):
 
+        os.sync()
+        drop_caches = open("/proc/sys/vm/drop_caches", "w")
+        drop_caches.write("3")
+        drop_caches.close()
+
         superBlock = SuperBlock(self.diskName)
         decoder = Decoder()
 
@@ -111,7 +117,8 @@ class ReadJournal:
 
                     # if this block in the journal is a commit block, but not for the current transaction, remove the transaction
                     elif (decoder.beBytesToDecimal(block, 0, 3) == 3225106840) and (decoder.beBytesToDecimal(block, 4, 7) == 2) and (decoder.beBytesToDecimal(block, 8, 11) != transactionList[-1].transactionNum):
-                        deleteLast = True
+                        if not hasCommitBlock:
+                            deleteLast = True
 
                 journalBlockNum += 1
 

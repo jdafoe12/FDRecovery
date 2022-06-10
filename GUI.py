@@ -116,7 +116,7 @@ class App():
         for index in self.selectDeletedFiles1.curselection():
             toRecover.append(self.deletedInodes[(index) + floor(len(self.deletedFiles) / 3)])
         for index in self.selectDeletedFiles2.curselection():
-            toRecover.append(self.deletedInodes[(index) + ((len(self.deletedFiles) - floor(len(self.deletedFiles) / 3)))])
+            toRecover.append(self.deletedInodes[(index) + ((len(self.deletedFiles) - ceil(len(self.deletedFiles) / 3)))])
 
         self.numRecovered += fileRecovery.recoverFiles(self.currentDisk, self.transactions, toRecover, len(toRecover), self.outputDirectory)
         self.recoveredLabel.config(text=f"Recovered {self.numRecovered} files")
