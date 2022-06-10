@@ -20,6 +20,7 @@ readJournal = ReadJournal(diskName)
 
 
 transactions = readJournal.readFileSystemJournal()
+transactions.sort(key=lambda transaction: -transaction.transactionNum)
 deletedInodes = fileRecovery.getDeletedInodes(diskName, transactions)
 
 numDeleted = len(deletedInodes)

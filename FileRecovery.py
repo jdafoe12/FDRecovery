@@ -21,7 +21,11 @@ class FileRecovery:
         numRecovered = 0
         for deletedInode in toRecover:
             for transaction in transactions:
-                
+
+                # if Transaction is not useful, move on
+                if transaction.transactionType == 2:
+                    continue
+
                 journalBlockNum = transaction.journalBlockNum + 1
 
                 breakFlag = False

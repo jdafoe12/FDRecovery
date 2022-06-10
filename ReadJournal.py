@@ -107,10 +107,6 @@ class ReadJournal:
                     # add a new transaction
                     transactionList.append(Transaction(block, journalBlockNum, blockTypeMap))
 
-                    # if the transaction type is not useful, have it set for deletion
-                    if transactionList[-1].transactionType == 2:
-                        deleteLast = True
-
                 # if this block in the journal is the commit block for the current transaction, set the commit time
                 elif len(transactionList) > 0:
                     if (decoder.beBytesToDecimal(block, 0, 3) == 3225106840) and (decoder.beBytesToDecimal(block, 4, 7) == 2) and (decoder.beBytesToDecimal(block, 8, 11) == transactionList[-1].transactionNum):
@@ -126,8 +122,6 @@ class ReadJournal:
 
 
             disk.close
-
-        transactionList.sort(key=lambda transaction: -transaction.transactionNum)
 
         return transactionList
 

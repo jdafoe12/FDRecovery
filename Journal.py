@@ -1,4 +1,5 @@
 # class JournalSuperBlock contains journalBlockSize, numBlocks, firstLogBlock
+import time
 from Decoder import *
 
 
@@ -63,3 +64,31 @@ class Transaction:
 
         elif "iTableBlock" in blockTypesInOrder:
             self.transactionType = 1
+
+
+    def __str__(self):
+        transactionAsString = f"Transaction Number: {self.transactionNum}\n"
+
+        if self.transactionType == 0:
+            transactionAsString += "Transaction Type: Deletion\n\n"
+        elif self.transactionType == 1:
+            transactionAsString += "Transaction Type: Other Useful (contains an inode table)\n\n"
+        elif self.transactionType == 2:
+            transactionAsString += "Transaction Type: Not Useful (does not contain an inode table)\n\n"
+        
+        transactionAsString += "Transaction Data Block(s):\n"
+        iteration = 0
+        for block in self.dataBlocks:
+            if iteration < 2:
+                transactionAsString += f"Block Num: {block[0]} Block Type: {block[1]} | "
+            elif iteration == 2:
+                transactionAsString += f"Block Num: {block[0]} Block Type: {block[1]}"
+                transactionAsString += "\n"
+            iteration = (iteration + 1) % 3
+
+        if iteration < 2:
+            transactionAsString += "\n\n"
+
+        transactionAsString += f"Commit Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.commitTime))}\n"
+
+        return transactionAsString

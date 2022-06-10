@@ -78,6 +78,7 @@ class App():
             fileRecovery = FileRecovery()
             readJournal = ReadJournal(disk)
             self.transactions = readJournal.readFileSystemJournal()
+            self.transactions.sort(key=lambda transaction: -transaction.transactionNum)
             self.deletedInodes = fileRecovery.getDeletedInodes(disk, self.transactions)
             self.deletedFiles = []
             for inode in self.deletedInodes:
