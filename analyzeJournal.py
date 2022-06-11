@@ -40,15 +40,15 @@ while loop:
         readN = int(input("How many transactions would you like to see? "))
 
         for i in range(journalTransactionNum, journalTransactionNum + readN):
-            for i in range(0, 50):
+            for dashes in range(0, 150):
                 print("-", end="")
             print()
             print(transactionsInJournalOrder[i])
-            for i in range(0, 50):
+            for dashes in range(0, 150):
                 print("-", end="")
             print()
-            
-    if order == 1:
+
+    elif order == 1:
         transactionNum = int(input(f"Which transaction would you like to start at ({firstTransactionNum} to {latestTransactionNum})? "))
         readN = int(input("How many transactions would you like to see? "))
 
@@ -59,11 +59,11 @@ while loop:
             index += 1
 
         for i in range(index, index + readN):
-            for i in range(0, 50):
+            for dashes in range(0, 150):
                 print("-", end="")
             print()
             print(transactionsInTransactionOrder[i])
-            for i in range(0, 50):
+            for dashes in range(0, 150):
                 print("-", end="")
             print()
 

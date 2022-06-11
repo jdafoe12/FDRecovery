@@ -86,7 +86,7 @@ class Transaction:
                 transactionAsString += "\n"
             iteration = (iteration + 1) % 3
 
-        if iteration < 2:
+        if iteration - 1 < 2:
             transactionAsString += "\n\n"
 
         transactionAsString += f"Commit Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.commitTime))}\n"
