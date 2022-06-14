@@ -54,15 +54,20 @@ class Transaction:
         # determine the transaction type
         # this is very basic right now. This algorithm only works when the number of files deleted within the transaction is not too large
         blockTypesInOrder: list = []
-
+        numITableBlock = 0
         for block in self.dataBlocks:
+            if block[1] == "iTableBlock":
+                numITableBlock += 1
             blockTypesInOrder.append(block[1])
 
 
         if blockTypesInOrder[0:3] == ["unknownBlock", "iTableBlock", "unknownBlock"]:
             self.transactionType = 0
+            
+        elif numITableBlock > 1 and (blockTypesInOrder[0] == "unknownBlock" or blockTypesInOrder[0] == "iTableBlock") and "dBitmapBlock" in blockTypesInOrder:
+            self.transactionType = 0
 
-        elif "iTableBlock" in blockTypesInOrder:
+        elif numITableBlock > 0:
             self.transactionType = 1
 
 
