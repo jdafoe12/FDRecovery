@@ -15,12 +15,17 @@ def main():
     print("\n")
 
     diskName = input("File path of disk: ")
-    readJournal = read_journal.ReadJournal(diskName)
+
+    for disk in diskList:
+        if disk.diskPath == diskName:
+            currentDisk = disk
+
+    readJournal = read_journal.ReadJournal(currentDisk)
 
 
     transactions = readJournal.readFileSystemJournal()
     transactions.sort(key=lambda transaction: -transaction.transactionNum)
-    deletedInodes = fileRecovery.getDeletedInodes(diskName, transactions)
+    deletedInodes = fileRecovery.getDeletedInodes(currentDisk, transactions)
 
     numDeleted = len(deletedInodes)
 
@@ -36,7 +41,7 @@ def main():
 
     filePath = input("please provide a file path for recovered files: ")
 
-    numRecovered = fileRecovery.recoverFiles(diskName, transactions, deletedInodes, numToRecover, filePath)
+    numRecovered = fileRecovery.recoverFiles(currentDisk, transactions, deletedInodes, numToRecover, filePath)
 
     print("%d files were successfully recovered" % numRecovered)
 

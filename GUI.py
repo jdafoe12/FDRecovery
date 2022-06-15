@@ -25,15 +25,12 @@ class App():
 
         # get a list of disks
         allDisks = disks.getDisks()
-        diskPaths = []
-        for disk in allDisks:
-            diskPaths.append(disk.diskPath)
 
         self.currentDisk = ""
 
         # disk selector
         diskVar = tk.StringVar(master, "select disk")
-        diskOptions = tk.OptionMenu(self.topFrame, diskVar, *diskPaths, command=self.getDeletedFiles)
+        diskOptions = tk.OptionMenu(self.topFrame, diskVar, *allDisks, command=self.getDeletedFiles)
         diskOptions.grid(column=0, row=0, columnspan=2, sticky="w")
 
         # label, prompting user to choose files to recover
@@ -73,10 +70,10 @@ class App():
 
     def getDeletedFiles(self, disk):
 
-        if self.currentDisk != disk:
+        if self.currentDisk != disk.diskPath:
             self.topFrame.config(cursor="exchange")
             self.topFrame.update_idletasks()
-            self.currentDisk = disk
+            self.currentDisk = disk.diskPath
 
             fileRecovery = file_recovery.FileRecovery()
             readJournal = read_journal.ReadJournal(disk)

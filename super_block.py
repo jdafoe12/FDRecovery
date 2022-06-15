@@ -4,10 +4,10 @@ import decode
 
 class SuperBlock:   
 
-    def __init__(self, diskName):
+    def __init__(self, diskO):
 
         # read the data
-        disk = open(diskName, "rb")
+        disk = open(diskO.diskPath, "rb")
         disk.seek(1024)
         data = disk.read(1024)
         disk.close

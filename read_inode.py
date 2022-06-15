@@ -7,7 +7,7 @@ import super_block
 
 class Inode:
 
-    def __init__(self, diskName, inodeNum, superBlock: super_block.SuperBlock, blockData):
+    def __init__(self, diskO, inodeNum, superBlock: super_block.SuperBlock, blockData):
         
         # if blockData is false, read from disk. inodeNum will be the inode number of the inode
         if type(blockData) is bool and blockData == False:
@@ -15,7 +15,7 @@ class Inode:
             # initialize data needed to read the inode from disk
             groupNum: int = int(inodeNum / superBlock.inodesPerGroup)
 
-            groupDescriptor = group_descriptor.GroupDescriptor(diskName, groupNum, superBlock)
+            groupDescriptor = group_descriptor.GroupDescriptor(diskO, groupNum, superBlock)
 
             inodeOffSet = ((inodeNum % superBlock.inodesPerGroup) - 1)
             inodesPerBlock = int(superBlock.blockSize / superBlock.inodeSize)
@@ -24,7 +24,7 @@ class Inode:
             inodeByteOffSet = (inodeOffSet * superBlock.inodeSize) + (inodeBlockNum * superBlock.blockSize)
 
             # read inode from disk
-            disk = open(diskName, "rb")
+            disk = open(diskO.diskPath, "rb")
             disk.seek(inodeByteOffSet)
             inodeData = disk.read(superBlock.inodeSize)
             disk.close
@@ -42,8 +42,8 @@ class Inode:
         self.hasExtentTree = (decoder.leBytesToDecimal(inodeData, 40, 41) == 62218) and (decoder.leBytesToDecimal(inodeData, 42, 43) > 0)
         self.entries: list[int] = list
 
-        if self.hasExtentTree and type(diskName) is not bool:
-            self.entries = self.readExtentTree(diskName, inodeData, list(), superBlock)
+        if self.hasExtentTree and type(diskO) is not bool:
+            self.entries = self.readExtentTree(diskO.diskPath, inodeData, list(), superBlock)
 
 
     def readExtentTree(self, diskName, data, nodes: list, superBlock: super_block.SuperBlock):

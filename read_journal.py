@@ -4,7 +4,7 @@ from math import ceil
 import os
 
 import group_descriptor
-import inode
+import read_inode
 import super_block
 import decode
 import journal
@@ -12,8 +12,8 @@ import journal
 
 class ReadJournal:
 
-    def __init__(self, diskName):
-        self.diskName = diskName
+    def __init__(self, diskO):
+        self.diskO = diskO
 
 
     def getBlockTypeMap(self, superBlock: super_block.SuperBlock):
@@ -35,7 +35,7 @@ class ReadJournal:
 
         for descriptorNum in range(0, int(superBlock.numBlocks / blocksPerGroup)):
 
-            groupDescriptor = group_descriptor.GroupDescriptor(self.diskName, descriptorNum, superBlock)
+            groupDescriptor = group_descriptor.GroupDescriptor(self.diskO, descriptorNum, superBlock)
 
             inodeTableLoc = groupDescriptor.inodeTableLoc
 
@@ -74,12 +74,12 @@ class ReadJournal:
         drop_caches.close()
 
 
-        superBlock = super_block.SuperBlock(self.diskName)
+        superBlock = super_block.SuperBlock(self.diskO)
         decoder = decode.Decoder()
 
         blockTypeMap = self.getBlockTypeMap(superBlock)
 
-        fileSystemJournalInode = inode.Inode(self.diskName, superBlock.journalInode, superBlock, False)
+        fileSystemJournalInode = read_inode.Inode(self.diskO, superBlock.journalInode, superBlock, False)
 
         
         transactionList = []
@@ -90,7 +90,7 @@ class ReadJournal:
         # an entry is a extent entry which specify the block numbers of the journal
         for entry in fileSystemJournalInode.entries:
 
-            disk = open(self.diskName, "rb")
+            disk = open(self.diskO.diskPath, "rb")
             disk.seek(superBlock.blockSize * entry.blockNum)
 
             # for each block in entry
@@ -131,8 +131,8 @@ class ReadJournal:
 
     def readJournalBlock(self, journalBlockNum):
 
-        superBlock = super_block.SuperBlock(self.diskName)
-        fileSystemJournalInode = inode.Inode(self.diskName, superBlock.journalInode, superBlock, False)
+        superBlock = super_block.SuperBlock(self.diskO)
+        fileSystemJournalInode = read_inode.Inode(self.diskO, superBlock.journalInode, superBlock, False)
 
         blockEntry = ()
         for entry in fileSystemJournalInode.entries:
@@ -140,7 +140,7 @@ class ReadJournal:
                 blockEntry = entry
 
 
-        disk = open(self.diskName, "rb")
+        disk = open(self.diskO.diskPath, "rb")
         disk.seek(superBlock.blockSize * (blockEntry.blockNum + (journalBlockNum - blockEntry.fileBlockNum)))
 
         data = disk.read(superBlock.blockSize)

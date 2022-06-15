@@ -3,7 +3,7 @@ from time import sleep
 import os
 
 import disks
-import inode
+import read_inode
 import super_block
 
 def getReadableJournalCopy():
@@ -17,6 +17,10 @@ def getReadableJournalCopy():
     print("\n")
 
     diskName = input("Choose disk to get copy of journal from: ")
+
+    for disk in diskList:
+        if diskName == disk.diskPath:
+            currentDisk = disk
 
     numCopies = int(input("Number of copies: "))
 
@@ -37,11 +41,11 @@ def getReadableJournalCopy():
         drop_caches.write("3")
         drop_caches.close()
         
-        superBlock = super_block.SuperBlock(diskName)
-        fileSystemJournalInode = inode.Inode(diskName, superBlock.journalInode, superBlock, False)
+        superBlock = super_block.SuperBlock(currentDisk)
+        fileSystemJournalInode = read_inode.Inode(currentDisk, superBlock.journalInode, superBlock, False)
 
         for entry in fileSystemJournalInode.entries:
-            disk = open(diskName, "rb")
+            disk = open(currentDisk.diskPath, "rb")
             disk.seek(superBlock.blockSize * entry.blockNum)
             for i in range(0, entry.numBlocks):
 

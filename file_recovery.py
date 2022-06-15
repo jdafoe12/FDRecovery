@@ -3,6 +3,7 @@
 import time
 from math import floor
 
+import read_inode
 import super_block
 import journal
 import read_journal
@@ -11,10 +12,10 @@ import read_journal
 class FileRecovery:
 
 
-    def recoverFiles(self, diskName, transactions: list, deletedInodes: list, numToRecover, filePath):
+    def recoverFiles(self, diskO, transactions: list, deletedInodes: list, numToRecover, filePath):
 
-        superBlock = super_block.SuperBlock(diskName)
-        readJournal = read_journal.ReadJournal(diskName)
+        superBlock = super_block.SuperBlock(diskO)
+        readJournal = read_journal.ReadJournal(diskO)
 
         toRecover = deletedInodes[0:numToRecover]
 
@@ -35,7 +36,7 @@ class FileRecovery:
                     if dataBlock[0] == deletedInode[0]:
 
                         iTableBlock = readJournal.readJournalBlock(journalBlockNum)
-                        inode = inode(diskName, deletedInode[1], superBlock, iTableBlock)
+                        inode = inode(diskO, deletedInode[1], superBlock, iTableBlock)
 
                         if inode.hasExtentTree:
 
@@ -44,7 +45,7 @@ class FileRecovery:
                             recoveredFile = open("%s/recoveredFile_%s" % (filePath, (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(deletedInode[2])) + f"_num_{numRecovered}")), "ab")
 
                             for entry in inode.entries:
-                                disk = open(diskName, "rb")
+                                disk = open(diskO.diskPath, "rb")
                                 disk.seek(superBlock.blockSize * entry.blockNum)
 
                                 for i in range(0, entry.numBlocks):
@@ -60,10 +61,10 @@ class FileRecovery:
 
         return numRecovered
 
-    def getDeletedInodes(self, diskName, transactions: list):
+    def getDeletedInodes(self, diskO, transactions: list):
 
-        superBlock = super_block.SuperBlock(diskName)
-        readJournal = read_journal.ReadJournal(diskName)
+        superBlock = super_block.SuperBlock(diskO)
+        readJournal = read_journal.ReadJournal(diskO)
 
         deletionTransactions: list[journal.Transaction] = []
 
@@ -100,7 +101,7 @@ class FileRecovery:
 
         for inodeNum in range(0, numInodesInBlock):
 
-            inode = inode(False, inodeNum, superBlock, block)
+            inode = read_inode.Inode(False, inodeNum, superBlock, block)
 
             if inode.deletionTime > 0 and not inode.hasExtentTree:
                 # each deleted inode is represented as a tuple(inode table block num, inode number within the table block starting at 0, inode deletion time)

@@ -5,12 +5,12 @@ import super_block
 
 class GroupDescriptor:
 
-    def __init__(self, diskName, groupNum, superBlock: super_block.SuperBlock):
+    def __init__(self, diskO, groupNum, superBlock: super_block.SuperBlock):
 
         groupDescriptorTableOffSet = (superBlock.blockSize * (superBlock.blocksPerGroup + 1))
         groupOffSet = groupNum * superBlock.groupDescriptorSize
 
-        disk = open(diskName, "rb")
+        disk = open(diskO.diskPath, "rb")
         disk.seek(groupDescriptorTableOffSet + groupOffSet)
         data = disk.read(superBlock.groupDescriptorSize)
 

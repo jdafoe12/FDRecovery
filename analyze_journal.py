@@ -14,7 +14,11 @@ def analyzeJournal():
 
     diskName = input("Choose disk to read journal from: ")
 
-    readJournal = read_journal.ReadJournal(diskName)
+    for disk in diskList:
+        if disk.diskPath == diskName:
+            currentDisk = disk
+
+    readJournal = read_journal.ReadJournal(currentDisk)
 
     transactions = readJournal.readFileSystemJournal()
 
