@@ -8,9 +8,9 @@ def main():
 
     print("select from availible disk file paths: ", end="")
 
-    disks = disks.getDisks()
+    diskList = disks.getDisks()
 
-    for disk in disks:
+    for disk in diskList:
         print(disk.diskPath, end=" ")
     print("\n")
 
