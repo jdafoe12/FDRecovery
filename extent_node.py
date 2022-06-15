@@ -1,5 +1,5 @@
 
-from Decoder import Decoder
+import decode
 
 
 class ExtentNode:
@@ -26,7 +26,7 @@ class ExtentHeader:
 
     def __init__(self, data):
 
-        decoder = Decoder()
+        decoder = decode.Decoder()
 
         self.numEntriesInExtent = decoder.leBytesToDecimal(data, 2, 3)
         self.maxEntries = decoder.leBytesToDecimal(data, 4, 5)
@@ -37,7 +37,7 @@ class ExtentEntry:
 
     def __init__(self, data):
 
-        decoder = Decoder()
+        decoder = decode.Decoder()
 
         self.fileBlockNum = decoder.leBytesToDecimal(data, 0, 3)
         self.numBlocks = decoder.leBytesToDecimal(data, 4, 5)
@@ -49,7 +49,7 @@ class ExtentIndex:
 
     def __init__(self, data):
 
-        decoder = Decoder()
+        decoder = decode.Decoder()
 
         self.fileBlockNum = decoder.leBytesToDecimal(data, 0, 3)
         self.nextNodeBlockNum = decoder.leBytesToDecimalLowerAndUpper(data, 4, 7, 8, 9)

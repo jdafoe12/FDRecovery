@@ -1,10 +1,11 @@
-import time
 
-from Inode import Inode
-from SuperBlock import SuperBlock
-from Decoder import *
-from Journal import *
-from ReadJournal import *
+
+import time
+from math import floor
+
+import super_block
+import journal
+import read_journal
 
 
 class FileRecovery:
@@ -12,8 +13,8 @@ class FileRecovery:
 
     def recoverFiles(self, diskName, transactions: list, deletedInodes: list, numToRecover, filePath):
 
-        superBlock = SuperBlock(diskName)
-        readJournal = ReadJournal(diskName)
+        superBlock = super_block.SuperBlock(diskName)
+        readJournal = read_journal.ReadJournal(diskName)
 
         toRecover = deletedInodes[0:numToRecover]
 
@@ -34,7 +35,7 @@ class FileRecovery:
                     if dataBlock[0] == deletedInode[0]:
 
                         iTableBlock = readJournal.readJournalBlock(journalBlockNum)
-                        inode = Inode(diskName, deletedInode[1], superBlock, iTableBlock)
+                        inode = inode(diskName, deletedInode[1], superBlock, iTableBlock)
 
                         if inode.hasExtentTree:
 
@@ -61,10 +62,10 @@ class FileRecovery:
 
     def getDeletedInodes(self, diskName, transactions: list):
 
-        superBlock = SuperBlock(diskName)
-        readJournal = ReadJournal(diskName)
+        superBlock = super_block.SuperBlock(diskName)
+        readJournal = read_journal.ReadJournal(diskName)
 
-        deletionTransactions: list[Transaction] = []
+        deletionTransactions: list[journal.Transaction] = []
 
         for transaction in transactions:
             if transaction.transactionType == 0:
@@ -91,7 +92,7 @@ class FileRecovery:
         return deletedInodes
 
 
-    def readInodeTableBlock(self, block: bytes, blockNum, superBlock: SuperBlock):
+    def readInodeTableBlock(self, block: bytes, blockNum, superBlock: super_block.SuperBlock):
 
         deletedInodes: list = []
 
@@ -99,7 +100,7 @@ class FileRecovery:
 
         for inodeNum in range(0, numInodesInBlock):
 
-            inode = Inode(False, inodeNum, superBlock, block)
+            inode = inode(False, inodeNum, superBlock, block)
 
             if inode.deletionTime > 0 and not inode.hasExtentTree:
                 # each deleted inode is represented as a tuple(inode table block num, inode number within the table block starting at 0, inode deletion time)

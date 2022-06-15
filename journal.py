@@ -1,6 +1,6 @@
 # class JournalSuperBlock contains journalBlockSize, numBlocks, firstLogBlock
 import time
-from Decoder import *
+import decode
 
 
 class JournalSuperBlock:
@@ -11,7 +11,7 @@ class Transaction:
 
     def __init__(self, descriptorData, journalBlockNum, blockTypeMap: dict):
 
-        decoder = Decoder()
+        decoder = decode.Decoder()
 
         # initialize transaction data fields
         self.transactionNum = decoder.beBytesToDecimal(descriptorData, 8, 11)

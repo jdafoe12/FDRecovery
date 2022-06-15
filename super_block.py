@@ -1,5 +1,5 @@
 
-from Decoder import Decoder
+import decode
 
 
 class SuperBlock:   
@@ -13,7 +13,7 @@ class SuperBlock:
         disk.close
 
         # interpret the data
-        decoder = Decoder()
+        decoder = decode.Decoder()
 
         self.journalInode = decoder.leBytesToDecimal(data, 224, 227)
         self.groupDescriptorSize = decoder.leBytesToDecimal(data, 254, 255)

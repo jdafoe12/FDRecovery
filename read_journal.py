@@ -1,10 +1,13 @@
-from math import ceil, floor
+
+
+from math import ceil
 import os
-from GroupDescriptor import GroupDescriptor
-from Inode import Inode
-from SuperBlock import SuperBlock
-from Decoder import *
-from Journal import *
+
+import group_descriptor
+import inode
+import super_block
+import decode
+import journal
 
 
 class ReadJournal:
@@ -13,7 +16,7 @@ class ReadJournal:
         self.diskName = diskName
 
 
-    def getBlockTypeMap(self, superBlock: SuperBlock):
+    def getBlockTypeMap(self, superBlock: super_block.SuperBlock):
 
         # initialize constant variables
         blockSize = superBlock.blockSize
@@ -32,7 +35,7 @@ class ReadJournal:
 
         for descriptorNum in range(0, int(superBlock.numBlocks / blocksPerGroup)):
 
-            groupDescriptor = GroupDescriptor(self.diskName, descriptorNum, superBlock)
+            groupDescriptor = group_descriptor.GroupDescriptor(self.diskName, descriptorNum, superBlock)
 
             inodeTableLoc = groupDescriptor.inodeTableLoc
 
@@ -71,12 +74,12 @@ class ReadJournal:
         drop_caches.close()
 
 
-        superBlock = SuperBlock(self.diskName)
-        decoder = Decoder()
+        superBlock = super_block.SuperBlock(self.diskName)
+        decoder = decode.Decoder()
 
         blockTypeMap = self.getBlockTypeMap(superBlock)
 
-        fileSystemJournalInode = Inode(self.diskName, superBlock.journalInode, superBlock, False)
+        fileSystemJournalInode = inode.Inode(self.diskName, superBlock.journalInode, superBlock, False)
 
         
         transactionList = []
@@ -105,7 +108,7 @@ class ReadJournal:
                     hasCommitBlock = False
 
                     # add a new transaction
-                    transactionList.append(Transaction(block, journalBlockNum, blockTypeMap))
+                    transactionList.append(journal.Transaction(block, journalBlockNum, blockTypeMap))
 
                 # if this block in the journal is the commit block for the current transaction, set the commit time
                 elif len(transactionList) > 0:
@@ -128,8 +131,8 @@ class ReadJournal:
 
     def readJournalBlock(self, journalBlockNum):
 
-        superBlock = SuperBlock(self.diskName)
-        fileSystemJournalInode = Inode(self.diskName, superBlock.journalInode, superBlock, False)
+        superBlock = super_block.SuperBlock(self.diskName)
+        fileSystemJournalInode = inode.Inode(self.diskName, superBlock.journalInode, superBlock, False)
 
         blockEntry = ()
         for entry in fileSystemJournalInode.entries:

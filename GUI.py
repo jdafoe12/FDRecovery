@@ -1,9 +1,12 @@
-import tkinter.filedialog
 
-from FileRecovery import *
-import Disks
-import time
+
+from math import floor, ceil
 import tkinter as tk
+import file_recovery
+import read_journal
+import disks
+import time
+
 
 
 
@@ -21,7 +24,7 @@ class App():
 
 
         # get a list of disks
-        allDisks = Disks.getDisks()
+        allDisks = disks.getDisks()
         diskPaths = []
         for disk in allDisks:
             diskPaths.append(disk.diskPath)
@@ -75,8 +78,8 @@ class App():
             self.topFrame.update_idletasks()
             self.currentDisk = disk
 
-            fileRecovery = FileRecovery()
-            readJournal = ReadJournal(disk)
+            fileRecovery = file_recovery.FileRecovery()
+            readJournal = read_journal.ReadJournal(disk)
             self.transactions = readJournal.readFileSystemJournal()
             self.transactions.sort(key=lambda transaction: -transaction.transactionNum)
             self.deletedInodes = fileRecovery.getDeletedInodes(disk, self.transactions)
@@ -108,7 +111,7 @@ class App():
         self.outputDirectoryLabel.config(text=f"Output dir: {self.outputDirectory}")
 
     def recover(self):
-        fileRecovery = FileRecovery()
+        fileRecovery = file_recovery.FileRecovery()
 
         toRecover = []
 

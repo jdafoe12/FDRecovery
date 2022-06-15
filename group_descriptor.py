@@ -1,11 +1,11 @@
 
-from Decoder import Decoder
-from SuperBlock import SuperBlock
+import decode
+import super_block
 
 
 class GroupDescriptor:
 
-    def __init__(self, diskName, groupNum, superBlock: SuperBlock):
+    def __init__(self, diskName, groupNum, superBlock: super_block.SuperBlock):
 
         groupDescriptorTableOffSet = (superBlock.blockSize * (superBlock.blocksPerGroup + 1))
         groupOffSet = groupNum * superBlock.groupDescriptorSize
@@ -14,7 +14,7 @@ class GroupDescriptor:
         disk.seek(groupDescriptorTableOffSet + groupOffSet)
         data = disk.read(superBlock.groupDescriptorSize)
 
-        decoder = Decoder()
+        decoder = decode.Decoder()
 
         # set group descriptor data fields
         self.inodeTableLoc = decoder.leBytesToDecimalLowerAndUpper(data, 8, 11, 40, 43)
