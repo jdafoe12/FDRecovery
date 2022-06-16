@@ -80,6 +80,7 @@ class FileRecovery:
             for block in transaction.dataBlocks:
 
                 if block[1] == "iTableBlock":
+                    
                     blockData = readJournal.readJournalBlock(transaction.journalBlockNum + blockBuffer)
 
                     for inode in self.readInodeTableBlock(blockData, block[0], superBlock):

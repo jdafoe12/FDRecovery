@@ -16,7 +16,11 @@ class SuperBlock:
         decoder = decode.Decoder()
 
         self.journalInode = decoder.leBytesToDecimal(data, 224, 227)
-        self.groupDescriptorSize = decoder.leBytesToDecimal(data, 254, 255)
+
+        if diskO.diskType == "ext4":
+            self.groupDescriptorSize = decoder.leBytesToDecimal(data, 254, 255)
+        elif diskO.diskType == "ext3":
+            self.groupDescriptorSize = 32
         self.inodeSize = decoder.leBytesToDecimal(data, 88, 89)
         self.inodesPerGroup = decoder.leBytesToDecimal(data, 40, 43)
         self.blocksPerGroup = decoder.leBytesToDecimal(data, 32, 35)

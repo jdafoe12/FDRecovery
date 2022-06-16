@@ -134,10 +134,18 @@ class ReadJournal:
         superBlock = super_block.SuperBlock(self.diskO)
         fileSystemJournalInode = read_inode.Inode(self.diskO, superBlock.journalInode, superBlock, False)
 
+        journalBlockNum = journalBlockNum % ((fileSystemJournalInode.entries[-1].fileBlockNum +  fileSystemJournalInode.entries[-1].numBlocks) - 1)
+
+        if journalBlockNum == 0:
+            journalBlockNum = fileSystemJournalInode.entries[-1].fileBlockNum +  fileSystemJournalInode.entries[-1].numBlocks
+
+
         blockEntry = ()
         for entry in fileSystemJournalInode.entries:
-            if entry.fileBlockNum + entry.numBlocks > journalBlockNum:
+            if entry.fileBlockNum + entry.numBlocks >= journalBlockNum:
                 blockEntry = entry
+                break
+
 
 
         disk = open(self.diskO.diskPath, "rb")
