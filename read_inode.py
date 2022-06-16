@@ -128,7 +128,7 @@ class Inode:
 
         offSet = 0
         while offSet < len(data):
-            blockNum = decoder.leBytesToDecimal(data, offSet, offSet + 3)
+            blockNum = decoder.leBytesToDecimal(self, data, offSet, offSet + 3)
             if blockNum != 0:
                 pointers.append(blockNum)
             offSet += 4
