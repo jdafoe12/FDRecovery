@@ -90,7 +90,7 @@ class Inode:
         blocks.extend(self.readIndirectPointers(diskName, data[96:100], 3, superBlock))
 
         # Makes entries from the list of blocks
-        entry = self.BlockPointerEntry(0, 0, 0)
+        entry = BlockPointerEntry(0, 0, 0)
         prevBlock = 0
         numBlocksInEntry = 0
         fileBlockNum = 0
@@ -109,7 +109,7 @@ class Inode:
                     entry.numBlocks = numBlocksInEntry
 
                 entries.append(entry)
-                entry = self.BlockPointerEntry(0, 0, 0)
+                entry = BlockPointerEntry(0, 0, 0)
                 numBlocksInEntry = 0
 
             # Increment counters
