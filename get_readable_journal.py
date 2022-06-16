@@ -1,6 +1,7 @@
 
 from time import sleep
 import os
+import re
 
 import disks
 import read_inode
@@ -49,9 +50,9 @@ def getReadableJournalCopy():
             disk.seek(superBlock.blockSize * entry.blockNum)
             for i in range(0, entry.numBlocks):
 
-                numReads = int(superBlock.blockSize / 32)
+                numReads = int(superBlock.blockSize / 16)
                 for i in range(0, numReads):
-                    blockBytesHex = disk.read(32).hex()
+                    blockBytesHex = (" ").join(re.findall(".{1,4}", disk.read(16).hex()))
                     journal.write(blockBytesHex + "\n")
                 journal.write("\n")
             disk.close
