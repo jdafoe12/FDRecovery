@@ -38,7 +38,7 @@ class FileRecovery:
                         iTableBlock = readJournal.readJournalBlock(journalBlockNum)
                         inode = inode(diskO, deletedInode[1], superBlock, iTableBlock)
 
-                        if inode.hasExtentTree:
+                        if inode.hasBlockPointers:
 
                             numRecovered += 1
 
@@ -80,10 +80,10 @@ class FileRecovery:
             for block in transaction.dataBlocks:
 
                 if block[1] == "iTableBlock":
-                    
+
                     blockData = readJournal.readJournalBlock(transaction.journalBlockNum + blockBuffer)
 
-                    for inode in self.readInodeTableBlock(blockData, block[0], superBlock):
+                    for inode in self.readInodeTableBlock(diskO, blockData, block[0], superBlock):
                         if transaction.commitTime - inode[2] < 12:
                             deletedInodes.append(inode)
 
@@ -94,7 +94,7 @@ class FileRecovery:
         return deletedInodes
 
 
-    def readInodeTableBlock(self, block: bytes, blockNum, superBlock: super_block.SuperBlock):
+    def readInodeTableBlock(self, diskO, block: bytes, blockNum, superBlock: super_block.SuperBlock):
 
         deletedInodes: list = []
 
@@ -102,9 +102,10 @@ class FileRecovery:
 
         for inodeNum in range(0, numInodesInBlock):
 
-            inode = read_inode.Inode(False, inodeNum, superBlock, block)
+            inode = read_inode.Inode(diskO, inodeNum, superBlock, block)
 
-            if inode.deletionTime > 0 and not inode.hasExtentTree:
+
+            if inode.deletionTime > 0 and not inode.hasBlockPointers:
                 # each deleted inode is represented as a tuple(inode table block num, inode number within the table block starting at 0, inode deletion time)
                 deletedInodes.append((blockNum, inodeNum, inode.deletionTime))
 

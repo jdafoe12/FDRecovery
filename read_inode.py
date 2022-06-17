@@ -39,14 +39,17 @@ class Inode:
 
         # initialize inode data
         self.deletionTime = decoder.leBytesToDecimal(inodeData, 20, 23)
-        self.hasExtentTree = (decoder.leBytesToDecimal(inodeData, 40, 41) == 62218) and (decoder.leBytesToDecimal(inodeData, 42, 43) > 0)
+        if diskO.diskType == "ext4":
+            self.hasBlockPointers = (decoder.leBytesToDecimal(inodeData, 40, 41) == 62218) and (decoder.leBytesToDecimal(inodeData, 42, 43) > 0)
+        elif diskO.diskType == "ext3":
+            self.hasBlockPointers = (decoder.leBytesToDecimal(inodeData, 40, 43) > 0)
         self.entries: list[int] = list
 
-        if self.hasExtentTree and type(diskO) is not bool and diskO.diskType == "ext4":
+        if self.hasBlockPointers and diskO.diskType == "ext4":
 
             self.entries = self.readExtentTree(diskO.diskPath, inodeData, list(), superBlock)
 
-        elif diskO.diskType == "ext3":
+        elif self.hasBlockPointers and diskO.diskType == "ext3":
             self.entries = self.readBlockPointers(diskO.diskPath, inodeData, superBlock)
 
 
