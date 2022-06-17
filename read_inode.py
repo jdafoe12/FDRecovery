@@ -93,60 +93,25 @@ class Inode:
         blocks.extend(self.readIndirectPointers(diskName, data[92:96], 2, superBlock))
         blocks.extend(self.readIndirectPointers(diskName, data[96:100], 3, superBlock))
 
-        isComplete = True
-        fileBlockNum = 0
-        prevBlock = 0
-        numBlocksInEntry = 1
-        entry: BlockPointerEntry = BlockPointerEntry
-        for block in blocks:
-            if isComplete:
-                entry = BlockPointerEntry(fileBlockNum, 0, block)
-                isComplete = False
 
-            elif block != prevBlock + 1:
-                isComplete = True
+        fileBlockNum = 0
+        prevBlock = blocks[0]
+        numBlocksInEntry = 0
+        entry: BlockPointerEntry = BlockPointerEntry(fileBlockNum, 0, blocks[0])
+        for block in blocks:
+
+            if block != prevBlock + 1:
                 entry.numBlocks = numBlocksInEntry
                 entries.append(entry)
+                numBlocksInEntry = 0
+                entry = BlockPointerEntry(fileBlockNum, 0, block)
 
             numBlocksInEntry += 1
             fileBlockNum += 1
             prevBlock = block
 
+        entry.numBlocks = numBlocksInEntry
         entries.append(entry)
-                
-
-
-
-
-
-        # # Makes entries from the list of blocks
-        # entry = BlockPointerEntry(0, 0, 0)
-        # prevBlock = 0
-        # numBlocksInEntry = 0
-        # fileBlockNum = 0
-        # for block in blocks:
-        #     # If this block number is directly after the last one, keep it in the same entry
-        #     if block == prevBlock + 1 and entry.blockNum == 0:
-
-        #         if entry.blockNum == 0:
-        #             entry.blockNum = prevBlock
-        #             entry.fileBlockNum = fileBlockNum - 1
-
-        #     # If block number is not directly after last one, Make a new entry
-        #     elif block != prevBlock + 1:
-
-        #         if entry.blockNum != 0:
-        #             entry.numBlocks = numBlocksInEntry
-
-        #         entries.append(entry)
-        #         entry = BlockPointerEntry(0, 0, 0)
-        #         numBlocksInEntry = 0
-
-        #     # Increment counters
-        #     prevBlock = block
-        #     numBlocksInEntry += 1
-        #     fileBlockNum += 1
-
 
         return sorted(entries, key=lambda entry: entry.fileBlockNum)
 
