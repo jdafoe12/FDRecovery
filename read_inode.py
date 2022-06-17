@@ -45,7 +45,7 @@ class Inode:
             self.hasBlockPointers = (decoder.leBytesToDecimal(inodeData, 40, 43) > 0)
         self.entries: list[int] = list
 
-        if self.hasBlockPointers and diskO.diskType == "ext4":
+        if type(blockData) is bool and self.hasBlockPointers and diskO.diskType == "ext4":
 
             self.entries = self.readExtentTree(diskO.diskPath, inodeData, list(), superBlock)
 
