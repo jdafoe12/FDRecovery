@@ -43,7 +43,7 @@ def getReadableJournalCopy():
         drop_caches.close()
         
         superBlock = super_block.SuperBlock(currentDisk)
-        fileSystemJournalInode = read_inode.Inode(currentDisk, superBlock.journalInode, superBlock, False)
+        fileSystemJournalInode = read_inode.Inode(currentDisk, superBlock.journalInode, superBlock, False, True)
 
         for entry in fileSystemJournalInode.entries:
             disk = open(currentDisk.diskPath, "rb")

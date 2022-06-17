@@ -29,7 +29,8 @@ class App():
         # get a list of disks
         allDisks = disks.getDisks()
 
-        self.currentDisk = ""
+        self.currentDiskPath = ""
+        self.currentDisk: disks.Disk = disks.Disk
 
         # disk selector
         diskVar = tk.StringVar(master, "select disk")
@@ -73,16 +74,17 @@ class App():
 
     def getDeletedFiles(self, disk):
 
-        if self.currentDisk != disk.diskPath:
+        if self.currentDiskPath != disk.diskPath:
             self.topFrame.config(cursor="exchange")
             self.topFrame.update_idletasks()
-            self.currentDisk = disk.diskPath
+            self.currentDiskPath = disk.diskPath
+            self.currentDisk = disk
 
             fileRecovery = file_recovery.FileRecovery()
-            readJournal = read_journal.ReadJournal(disk)
+            readJournal = read_journal.ReadJournal(self.currentDisk)
             self.transactions = readJournal.readFileSystemJournal()
             self.transactions.sort(key=lambda transaction: -transaction.transactionNum)
-            self.deletedInodes = fileRecovery.getDeletedInodes(disk, self.transactions)
+            self.deletedInodes = fileRecovery.getDeletedInodes(self.currentDisk, self.transactions)
             self.deletedFiles = []
             for inode in self.deletedInodes:
                 self.deletedFiles.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(inode[2])) + f"_inode{inode[0]}_{inode[1]}")

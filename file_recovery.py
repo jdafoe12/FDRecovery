@@ -2,6 +2,7 @@
 
 import time
 from math import floor
+import disks
 
 import read_inode
 import super_block
@@ -36,7 +37,7 @@ class FileRecovery:
                     if dataBlock[0] == deletedInode[0]:
 
                         iTableBlock = readJournal.readJournalBlock(journalBlockNum)
-                        inode = inode(diskO, deletedInode[1], superBlock, iTableBlock)
+                        inode = read_inode.Inode(diskO, deletedInode[1], superBlock, iTableBlock, True)
 
                         if inode.hasBlockPointers:
 
@@ -102,7 +103,7 @@ class FileRecovery:
 
         for inodeNum in range(0, numInodesInBlock):
 
-            inode = read_inode.Inode(diskO, inodeNum, superBlock, block)
+            inode = read_inode.Inode(diskO, inodeNum, superBlock, block, False)
 
 
             if inode.deletionTime > 0 and not inode.hasBlockPointers:

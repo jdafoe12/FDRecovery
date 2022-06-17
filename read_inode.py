@@ -7,7 +7,7 @@ import super_block
 
 class Inode:
 
-    def __init__(self, diskO, inodeNum, superBlock: super_block.SuperBlock, blockData):
+    def __init__(self, diskO, inodeNum, superBlock: super_block.SuperBlock, blockData, readPointers: bool):
         
         # if blockData is false, read from disk. inodeNum will be the inode number of the inode
         if type(blockData) is bool and blockData == False:
@@ -45,11 +45,11 @@ class Inode:
             self.hasBlockPointers = (decoder.leBytesToDecimal(inodeData, 40, 43) > 0)
         self.entries: list[int] = list
 
-        if type(blockData) is bool and self.hasBlockPointers and diskO.diskType == "ext4":
+        if readPointers and self.hasBlockPointers and diskO.diskType == "ext4":
 
             self.entries = self.readExtentTree(diskO.diskPath, inodeData, list(), superBlock)
 
-        elif self.hasBlockPointers and diskO.diskType == "ext3":
+        elif readPointers and self.hasBlockPointers and diskO.diskType == "ext3":
             self.entries = self.readBlockPointers(diskO.diskPath, inodeData, superBlock)
 
 

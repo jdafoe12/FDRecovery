@@ -79,7 +79,7 @@ class ReadJournal:
 
         blockTypeMap = self.getBlockTypeMap(superBlock)
 
-        fileSystemJournalInode = read_inode.Inode(self.diskO, superBlock.journalInode, superBlock, False)
+        fileSystemJournalInode = read_inode.Inode(self.diskO, superBlock.journalInode, superBlock, False, True)
 
         
         transactionList = []
@@ -132,7 +132,7 @@ class ReadJournal:
     def readJournalBlock(self, journalBlockNum):
 
         superBlock = super_block.SuperBlock(self.diskO)
-        fileSystemJournalInode = read_inode.Inode(self.diskO, superBlock.journalInode, superBlock, False)
+        fileSystemJournalInode = read_inode.Inode(self.diskO, superBlock.journalInode, superBlock, False, True)
 
         journalBlockNum = journalBlockNum % ((fileSystemJournalInode.entries[-1].fileBlockNum +  fileSystemJournalInode.entries[-1].numBlocks) - 1)
 
