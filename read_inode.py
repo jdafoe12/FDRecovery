@@ -138,20 +138,20 @@ class Inode:
     def readIndirectPointers(self, diskName, data, depth, superBlock: super_block.SuperBlock):
 
         pointers = []
+        tempPointers = []
 
         pointers = self.readPointers(data)
 
-        for i in range(0, depth - 1):
-            numPointers = len(pointers)
+        for i in range(0, depth):
             for indirectPointerBlockNum in pointers:
                 disk = open(diskName, "rb")
                 disk.seek(superBlock.blockSize * indirectPointerBlockNum)
                 indirectPointerData = disk.read(superBlock.blockSize)
                 disk.close
-                pointers.extend(self.readPointers(indirectPointerData))
+                tempPointers.extend(self.readPointers(indirectPointerData))
             
-            for index in range(0, numPointers):
-                pointers.pop(index)
+            pointers = tempPointers
+            tempPointers = []
 
         return pointers
 
