@@ -2,6 +2,8 @@
 import time
 import decode
 
+import disks
+
 
 class JournalSuperBlock:
     print()
@@ -9,7 +11,7 @@ class JournalSuperBlock:
 
 class Transaction:
 
-    def __init__(self, descriptorData, journalBlockNum, blockTypeMap: dict):
+    def __init__(self, descriptorData, journalBlockNum, blockTypeMap: dict, diskO):
 
         decoder = decode.Decoder()
 
@@ -25,7 +27,10 @@ class Transaction:
 
         # a few things are assumed in this code. the sizes of the block tags, and the journal block size
         offset = 12
-        distance = 28
+        if diskO.diskType == "ext4":
+            distance = 28
+        elif diskO.diskType == "ext3":
+            distance = 20
         numBlocks = 0
         # loop goes through all block tags within the descriptor
         while (distance < len(descriptorData)) and (decoder.beBytesToDecimal(descriptorData, offset, distance) != 0):
@@ -42,10 +47,16 @@ class Transaction:
 
             # update offset values
             if numBlocks >= 1:
-                offset += 16
+                if diskO.diskType == "ext4":
+                    offset += 16
+                elif diskO.diskType == "ext3":
+                    offset += 8
 
             else:
-                offset += 32
+                if diskO.diskType == "ext4":
+                    offset += 32
+                elif diskO.diskType == "ext3":
+                    offset += 24
 
             distance = (offset + 16)
             numBlocks += 1

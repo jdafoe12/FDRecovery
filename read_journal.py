@@ -108,7 +108,7 @@ class ReadJournal:
                     hasCommitBlock = False
 
                     # add a new transaction
-                    transactionList.append(journal.Transaction(block, journalBlockNum, blockTypeMap))
+                    transactionList.append(journal.Transaction(block, journalBlockNum, blockTypeMap, self.diskO))
 
                 # if this block in the journal is the commit block for the current transaction, set the commit time
                 elif len(transactionList) > 0:
