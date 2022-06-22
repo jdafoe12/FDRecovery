@@ -47,10 +47,9 @@ class Inode:
         self.entries: list[int] = list
 
         if readPointers and self.hasBlockPointers and diskO.diskType == "ext4":
-
             self.entries = self.readExtentTree(diskO.diskPath, inodeData, list(), superBlock)
 
-        elif readPointers and self.hasBlockPointers and diskO.diskType == "ext3":
+        elif readPointers and self.hasBlockPointers and (diskO.diskType == "ext3" or diskO.diskType == "ext2"):
             self.entries = self.readBlockPointers(diskO.diskPath, inodeData, superBlock)
 
 

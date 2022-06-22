@@ -3,13 +3,11 @@
 from math import floor, ceil
 from tkinter import filedialog
 import tkinter as tk
-
-
-import file_recovery
-import read_journal
-import disks
 import time
 
+import file_recovery_journaled
+import read_journal
+import disks
 
 
 
@@ -80,7 +78,7 @@ class App():
             self.currentDiskPath = disk.diskPath
             self.currentDisk = disk
 
-            fileRecovery = file_recovery.FileRecovery()
+            fileRecovery = file_recovery_journaled.FileRecoveryJournaled()
             readJournal = read_journal.ReadJournal(self.currentDisk)
             self.transactions = readJournal.readFileSystemJournal()
             self.transactions.sort(key=lambda transaction: -transaction.transactionNum)
@@ -113,7 +111,7 @@ class App():
         self.outputDirectoryLabel.config(text=f"Output dir: {self.outputDirectory}")
 
     def recover(self):
-        fileRecovery = file_recovery.FileRecovery()
+        fileRecovery = file_recovery_journaled.FileRecoveryJournaled()
 
         toRecover = []
 

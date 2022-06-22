@@ -50,3 +50,15 @@ class Decoder:
 
         return num
 
+    
+    def leBytesToBitArray(self, data):
+
+        bits = []
+
+        for byte in data:
+            for i in range(0, 8):
+                bits.append(byte & 0x01)
+                byte = byte >> 1
+
+        return bits
+

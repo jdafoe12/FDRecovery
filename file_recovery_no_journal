@@ -1,0 +1,101 @@
+
+from math import ceil, floor
+
+
+import group_descriptor
+import super_block
+import decode
+import read_inode
+
+class FileRecoveryNoJournal:
+
+    def recoverFiles():
+
+
+
+        return
+
+    # returns a list of deleted inodes as tuple (inode table block num, inode number within the table block starting at 0, inode deletion time)
+    def getDeletedInodes(self, diskO):
+
+        superBlock = super_block.SuperBlock(diskO)
+
+        inodesToCheck = self.readInodeBitmaps(diskO, superBlock)
+        deletedInodes = []
+
+        for inodeNum in inodesToCheck:
+            inodeNum = read_inode.Inode(diskO, inodeNum, superBlock, False, False)
+            if inodeNum.deletionTime == 0:
+                break
+
+
+            groupNum: int = int(inodeNum / superBlock.inodesPerGroup)
+
+            groupDescriptor = group_descriptor.GroupDescriptor(diskO, groupNum, superBlock)
+
+            inodeOffSet = ((inodeNum % superBlock.inodesPerGroup) - 1)
+            inodesPerBlock = int(superBlock.blockSize / superBlock.inodeSize)
+
+            inodeBlockNum = int(inodeOffSet / inodesPerBlock) + groupDescriptor.inodeTableLoc
+
+
+            deletedInodes.append((inodeBlockNum, inodeOffSet, inodeNum.deletionTime))
+
+
+
+        return deletedInodes
+
+    # returns a list of inode numbers to check
+    def readInodeBitmaps(self, diskO, superBlock: super_block.SuperBlock):
+
+        blockSize = superBlock.blockSize
+        blocksPerGroup = superBlock.blocksPerGroup
+        inodesPerGroup = superBlock.inodesPerGroup
+
+        iBitmaps = []
+        inodesToCheck = []
+
+        for descriptorNum in range(0, int(superBlock.numBlocks / blocksPerGroup)):
+            groupDescriptor = group_descriptor.GroupDescriptor(diskO, descriptorNum, superBlock)
+
+
+            for iBitmapBlockNum in range(groupDescriptor.inodeBitMapLoc, groupDescriptor.inodeBitMapLoc + ceil(inodesPerGroup / (blockSize * 8))):
+                iBitmaps.append((iBitmapBlockNum, descriptorNum))
+
+
+        decoder = decode.Decoder
+
+        for iBitmapBlockNum in iBitmaps:
+
+            firstInodeNum = (descriptorNum * superBlock.inodesPerGroup) + 1
+
+
+
+            disk = open(diskO.diskName, "rb")
+            disk.seek(superBlock.blockSize * iBitmapBlockNum)
+            bytes = disk.read(ceil(superBlock.inodesPerGroup / 8))
+
+            bits = decoder.leBytesToBitArray(bytes)
+
+            # list of tuple(position of 1 bit, relative position of 0 bit(0 for left, 1 for right))
+            gapRanges = []
+
+            prevBit = 1
+            for i in range(0, len(bits)):
+                if bits[i] == 1 and prevBit == 0:
+                    gapRanges.append(i, 0)
+                elif bits[i] == 0 and prevBit == 1:
+                    gapRanges.append(i - 1, 1)
+
+                prevBit = bits[i]
+
+
+            prevPosition = (-1, 1)
+            for position in gapRanges:
+                if prevPosition[1] == 1 and position[1] == 0:
+                    inodesToCheck.extend(list(range(firstInodeNum + (prevPosition + 1), position)))
+
+
+
+        return inodesToCheck
+        

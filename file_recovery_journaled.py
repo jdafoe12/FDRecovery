@@ -10,7 +10,7 @@ import journal
 import read_journal
 
 
-class FileRecovery:
+class FileRecoveryJournaled:
 
 
     def recoverFiles(self, diskO, transactions: list, deletedInodes: list, numToRecover, filePath):
@@ -85,6 +85,7 @@ class FileRecovery:
                     blockData = readJournal.readJournalBlock(transaction.journalBlockNum + blockBuffer)
 
                     for inode in self.readInodeTableBlock(diskO, blockData, block[0], superBlock):
+                        # gather data to make this number make more sense. average difference + 1 standard deviation
                         if transaction.commitTime - inode[2] < 12:
                             deletedInodes.append(inode)
 
