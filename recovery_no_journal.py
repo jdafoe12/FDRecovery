@@ -74,7 +74,7 @@ class FileRecoveryNoJournal:
 
 
             for iBitmapBlockNum in range(groupDescriptor.inodeBitMapLoc, groupDescriptor.inodeBitMapLoc + ceil(inodesPerGroup / (blockSize * 8))):
-                iBitmaps.append((iBitmapBlockNum, descriptorNum))
+                iBitmaps.append(iBitmapBlockNum)
 
 
         decoder = decode.Decoder
