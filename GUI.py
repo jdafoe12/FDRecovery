@@ -94,7 +94,7 @@ class App():
                 self.deletedInodes = fileRecovery.getDeletedInodes(self.currentDisk)
                 self.deletedFiles = []
                 for inode in self.deletedInodes:
-                    self.deletedFiles.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(inode[1]) + f"_inode{inode[0]}"))
+                    self.deletedFiles.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(inode[1])) + f"_inode{inode[0]}")
 
 
             self.updateBoxes()

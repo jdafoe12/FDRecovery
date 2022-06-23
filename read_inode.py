@@ -42,7 +42,7 @@ class Inode:
         self.deletionTime = decoder.leBytesToDecimal(inodeData, 20, 23)
         if diskO.diskType == "ext4":
             self.hasBlockPointers = (decoder.leBytesToDecimal(inodeData, 40, 41) == 62218) and (decoder.leBytesToDecimal(inodeData, 42, 43) > 0)
-        elif diskO.diskType == "ext3":
+        elif diskO.diskType == "ext3" or diskO.diskType == "ext2":
             self.hasBlockPointers = (decoder.leBytesToDecimal(inodeData, 40, 43) > 0)
         self.entries: list[int] = list
 

@@ -15,7 +15,7 @@ class FileRecoveryNoJournal:
 
         superBlock = super_block.SuperBlock(diskO)
 
-        toRecover = deletedInodes[0, numToRecover]
+        toRecover = deletedInodes[0 : numToRecover]
 
         numRecovered = 0
         for deletedInode in toRecover:
@@ -42,82 +42,91 @@ class FileRecoveryNoJournal:
 
     # returns a list of deleted inodes as tuple (inode num, inode deletion time)
     def getDeletedInodes(self, diskO):
-
-        # flush filesystem cache
-        os.sync()
-        drop_caches = open("/proc/sys/vm/drop_caches", "w")
-        drop_caches.write("3")
-        drop_caches.close()
+        # need to add cache flushing somewhere. Maybe write a seperate function for it at this point.
+        deletedInodes = []
 
         superBlock = super_block.SuperBlock(diskO)
 
-        inodesToCheck = self.readInodeBitmaps(diskO, superBlock)
-        deletedInodes = []
+        inodeBitmaps = self.getInodeBitmaps(diskO, superBlock)
 
-        for inodeNum in inodesToCheck:
-            inode = read_inode.Inode(diskO, inodeNum, superBlock, False, False)
-            if inode.deletionTime == 0:
-                break
+        for iBitmap in inodeBitmaps:
+            holes = self.findHoles(diskO,iBitmap, superBlock)
 
+            for inodeNum in holes[0]:
+                inode = read_inode.Inode(diskO, inodeNum, superBlock, False, False)
 
-            deletedInodes.append((inodeNum, inode.deletionTime))
+                if inode.deletionTime != 0:
+                    deletedInodes.append((inodeNum, inode.deletionTime))
 
+            for inodeNum in range(holes[1], (((iBitmap[1] * superBlock.inodesPerGroup) + 1) + superBlock.inodesPerGroup)):
+                
+                inode = read_inode.Inode(diskO, inodeNum, superBlock, False, False)
+
+                if inode.deletionTime != 0:
+                    deletedInodes.append((inodeNum, inode.deletionTime))
+                elif inode.deletionTime == 0:
+                    break
+        
         deletedInodes.sort(key=lambda inode: -inode[1])
 
         return deletedInodes
 
-    # returns a list of inode numbers to check
-    def readInodeBitmaps(self, diskO, superBlock: super_block.SuperBlock):
-
+    # returns a list of inode bitmaps which are tuple(iBitmapBlockNum, descriptorNum)
+    def getInodeBitmaps(self, diskO, superBlock):
         blockSize = superBlock.blockSize
         blocksPerGroup = superBlock.blocksPerGroup
         inodesPerGroup = superBlock.inodesPerGroup
 
-        iBitmaps = []
-        inodesToCheck = []
+        iBitmaps = [()]
 
         for descriptorNum in range(0, int(superBlock.numBlocks / blocksPerGroup)):
             groupDescriptor = group_descriptor.GroupDescriptor(diskO, descriptorNum, superBlock)
 
 
             for iBitmapBlockNum in range(groupDescriptor.inodeBitMapLoc, groupDescriptor.inodeBitMapLoc + ceil(inodesPerGroup / (blockSize * 8))):
-                iBitmaps.append(iBitmapBlockNum)
+                iBitmaps.append((iBitmapBlockNum, descriptorNum))
+        
+        return iBitmaps
 
+
+
+
+
+    # returns a tuple (list of hole inodes, first end inode)
+    def findHoles(self, diskO, iBitmap, superBlock):
+
+        firstInodeNum = (iBitmap[1] * superBlock.inodesPerGroup) + 1
+
+        holeInodes = ([], int)
+
+        disk = open(diskO.diskPath, "rb")
+        disk.seek(superBlock.blockSize * iBitmap[0])
+        bytes = disk.read(ceil(superBlock.inodesPerGroup / 8))
+        disk.close
 
         decoder = decode.Decoder
 
-        for iBitmapBlockNum in iBitmaps:
-
-            firstInodeNum = (descriptorNum * superBlock.inodesPerGroup) + 1
-
-
-
-            disk = open(diskO.diskPath, "rb")
-            disk.seek(superBlock.blockSize * iBitmapBlockNum)
-            bytes = disk.read(ceil(superBlock.inodesPerGroup / 8))
-            disk.close
-
-            bits = decoder.leBytesToBitArray(self, bytes)
-
-            # list of tuple(position of 1 bit, relative position of 0 bit(0 for left, 1 for right))
-            gapRanges = []
-
-            prevBit = 1
-            for i in range(0, len(bits)):
-                if bits[i] == 1 and prevBit == 0:
-                    gapRanges.append((i, 0))
-                elif bits[i] == 0 and prevBit == 1:
-                    gapRanges.append((i - 1, 1))
-
-                prevBit = bits[i]
-
-
-            prevPosition = (-1, 1)
-            for position in gapRanges:
-                if prevPosition[1] == 1 and position[1] == 0:
-                    inodesToCheck.extend(list(range(firstInodeNum + (prevPosition[1] + 1), position[1])))
-
-
-
-        return inodesToCheck
+        bits = decoder.leBytesToBitArray(bytes)
         
+        # list of tuple(position of 1 bit, relative position of 0 bit(0 for left, 1 for right))
+        gapRanges = []
+
+        prevBit = 1
+        for i in range(0, len(bits)):
+            if bits[i] == 1 and prevBit == 0:
+                gapRanges.append((i, 0))
+            elif bits[i] == 0 and prevBit == 1:
+                gapRanges.append((i - 1, 1))
+
+            prevBit = bits[i]
+
+
+        prevPosition = (-1, 1)
+        for position in gapRanges:
+            if prevPosition[1] == 1 and position[1] == 0:
+                holeInodes[0].extend(list(range(firstInodeNum + (prevPosition[1] + 1), position[1])))
+            elif prevPosition[1] == 0 and position[1] == 1:
+                holeInodes[1] = position[0] + 1
+            prevPosition = position
+            
+        return holeInodes
