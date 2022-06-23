@@ -2,6 +2,7 @@
 from math import ceil, floor
 
 import time
+import os
 
 import group_descriptor
 import super_block
@@ -41,6 +42,12 @@ class FileRecoveryNoJournal:
 
     # returns a list of deleted inodes as tuple (inode num, inode deletion time)
     def getDeletedInodes(self, diskO):
+
+        # flush filesystem cache
+        os.sync()
+        drop_caches = open("/proc/sys/vm/drop_caches", "w")
+        drop_caches.write("3")
+        drop_caches.close()
 
         superBlock = super_block.SuperBlock(diskO)
 
