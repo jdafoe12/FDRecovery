@@ -85,7 +85,7 @@ class FileRecoveryNoJournal:
 
 
 
-            disk = open(diskO.diskName, "rb")
+            disk = open(diskO.diskPath, "rb")
             disk.seek(superBlock.blockSize * iBitmapBlockNum)
             bytes = disk.read(ceil(superBlock.inodesPerGroup / 8))
 
