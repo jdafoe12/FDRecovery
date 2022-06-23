@@ -89,7 +89,7 @@ class FileRecoveryNoJournal:
             disk.seek(superBlock.blockSize * iBitmapBlockNum)
             bytes = disk.read(ceil(superBlock.inodesPerGroup / 8))
 
-            bits = decoder.leBytesToBitArray(bytes)
+            bits = decoder.leBytesToBitArray(self, bytes)
 
             # list of tuple(position of 1 bit, relative position of 0 bit(0 for left, 1 for right))
             gapRanges = []
