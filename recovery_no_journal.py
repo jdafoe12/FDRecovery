@@ -1,6 +1,7 @@
 
 from math import ceil, floor
 
+import time
 
 import group_descriptor
 import super_block
@@ -9,13 +10,36 @@ import read_inode
 
 class FileRecoveryNoJournal:
 
-    def recoverFiles():
+    def recoverFiles(self, diskO, deletedInodes, numToRecover, filePath):
+
+        superBlock = super_block.SuperBlock(diskO)
+
+        toRecover = deletedInodes[0, numToRecover]
+
+        numRecovered = 0
+        for deletedInode in toRecover:
+
+            inode = read_inode.Inode(diskO, deletedInode[0], superBlock, False, True)
+
+            numRecovered += 1
+
+            recoveredFile = open("%s/recoveredFile_%s" % (filePath, (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(deletedInode[1])) + f"_num_{numRecovered}")), "ab")
+
+            for entry in inode.entries:
+                disk = open(diskO.diskPath, "rb")
+                disk.seek(superBlock.blockSize * entry.blockNum)
+
+                for i in range(0, entry.numBlocks):
+                    recoveredFile.write(disk.read(superBlock.blockSize))
+                                
+                disk.close
+            recoveredFile.close
 
 
 
-        return
+        return numRecovered
 
-    # returns a list of deleted inodes as tuple (inode table block num, inode number within the table block starting at 0, inode deletion time)
+    # returns a list of deleted inodes as tuple (inode num, inode deletion time)
     def getDeletedInodes(self, diskO):
 
         superBlock = super_block.SuperBlock(diskO)
@@ -24,24 +48,14 @@ class FileRecoveryNoJournal:
         deletedInodes = []
 
         for inodeNum in inodesToCheck:
-            inodeNum = read_inode.Inode(diskO, inodeNum, superBlock, False, False)
-            if inodeNum.deletionTime == 0:
+            inode = read_inode.Inode(diskO, inodeNum, superBlock, False, False)
+            if inode.deletionTime == 0:
                 break
 
 
-            groupNum: int = int(inodeNum / superBlock.inodesPerGroup)
+            deletedInodes.append((inodeNum, inode.deletionTime))
 
-            groupDescriptor = group_descriptor.GroupDescriptor(diskO, groupNum, superBlock)
-
-            inodeOffSet = ((inodeNum % superBlock.inodesPerGroup) - 1)
-            inodesPerBlock = int(superBlock.blockSize / superBlock.inodeSize)
-
-            inodeBlockNum = int(inodeOffSet / inodesPerBlock) + groupDescriptor.inodeTableLoc
-
-
-            deletedInodes.append((inodeBlockNum, inodeOffSet, inodeNum.deletionTime))
-
-
+        deletedInodes.sort(key=lambda inode: -inode[1])
 
         return deletedInodes
 

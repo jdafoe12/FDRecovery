@@ -1,10 +1,10 @@
 
 import read_journal
-import file_recovery_journaled
+import recovery_journaled
 import disks
 
 def main():
-    fileRecovery = file_recovery_journaled.FileRecoveryJournaled()
+    fileRecovery = recovery_journaled.FileRecoveryJournaled()
 
     print("select from availible disk file paths: ", end="")
 

@@ -5,7 +5,8 @@ from tkinter import filedialog
 import tkinter as tk
 import time
 
-import file_recovery_journaled
+import recovery_journaled
+import recovery_no_journal
 import read_journal
 import disks
 
@@ -78,14 +79,24 @@ class App():
             self.currentDiskPath = disk.diskPath
             self.currentDisk = disk
 
-            fileRecovery = file_recovery_journaled.FileRecoveryJournaled()
-            readJournal = read_journal.ReadJournal(self.currentDisk)
-            self.transactions = readJournal.readFileSystemJournal()
-            self.transactions.sort(key=lambda transaction: -transaction.transactionNum)
-            self.deletedInodes = fileRecovery.getDeletedInodes(self.currentDisk, self.transactions)
-            self.deletedFiles = []
-            for inode in self.deletedInodes:
-                self.deletedFiles.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(inode[2])) + f"_inode{inode[0]}_{inode[1]}")
+            if disk.diskType == "ext3" or disk.diskType == "ext4":
+                fileRecovery = recovery_journaled.FileRecoveryJournaled()
+                readJournal = read_journal.ReadJournal(self.currentDisk)
+                self.transactions = readJournal.readFileSystemJournal()
+                self.transactions.sort(key=lambda transaction: -transaction.transactionNum)
+                self.deletedInodes = fileRecovery.getDeletedInodes(self.currentDisk, self.transactions)
+                self.deletedFiles = []
+                for inode in self.deletedInodes:
+                    self.deletedFiles.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(inode[2])) + f"_inode{inode[0]}_{inode[1]}")
+
+            elif disk.diskType == "ext2":
+                fileRecovery = recovery_no_journal.FileRecoveryNoJournal()
+                self.deletedInodes = fileRecovery.getDeletedInodes(self.currentDisk)
+                self.deletedFiles = []
+                for inode in self.deletedInodes:
+                    self.deletedFiles.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(inode[1]) + f"_inode{inode[0]}"))
+
+
             self.updateBoxes()
             self.topFrame.config(cursor="")
             self.topFrame.update_idletasks()
@@ -111,7 +122,11 @@ class App():
         self.outputDirectoryLabel.config(text=f"Output dir: {self.outputDirectory}")
 
     def recover(self):
-        fileRecovery = file_recovery_journaled.FileRecoveryJournaled()
+
+        if self.currentDisk.diskType == "ext3" or self.currentDisk.diskType == "ext4":
+            fileRecovery = recovery_journaled.FileRecoveryJournaled()
+        elif self.currentDisk.diskType == "ext2":
+            fileRecovery = recovery_no_journal.FileRecoveryNoJournal()
 
         toRecover = []
 
@@ -122,7 +137,11 @@ class App():
         for index in self.selectDeletedFiles2.curselection():
             toRecover.append(self.deletedInodes[(index) + ((len(self.deletedFiles) - ceil(len(self.deletedFiles) / 3)))])
 
-        self.numRecovered += fileRecovery.recoverFiles(self.currentDisk, self.transactions, toRecover, len(toRecover), self.outputDirectory)
+        if self.currentDisk.diskType == "ext3" or self.currentDisk.diskType == "ext4":
+            self.numRecovered += fileRecovery.recoverFiles(self.currentDisk, self.transactions, toRecover, len(toRecover), self.outputDirectory)
+        elif self.currentDisk.diskType == "ext2":
+            self.numRecovered += fileRecovery.recoverFiles(self.currentDisk, toRecover, len(toRecover), self.outputDirectory)
+
         self.recoveredLabel.config(text=f"Recovered {self.numRecovered} files")
 
 

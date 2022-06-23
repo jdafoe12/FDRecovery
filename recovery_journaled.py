@@ -51,6 +51,9 @@ class FileRecoveryJournaled:
 
                                 for i in range(0, entry.numBlocks):
                                     recoveredFile.write(disk.read(superBlock.blockSize))
+                                
+                                disk.close
+                            recoveredFile.close
 
                             breakFlag = True
                             break
