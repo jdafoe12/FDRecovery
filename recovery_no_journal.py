@@ -97,9 +97,9 @@ class FileRecoveryNoJournal:
             prevBit = 1
             for i in range(0, len(bits)):
                 if bits[i] == 1 and prevBit == 0:
-                    gapRanges.append(i, 0)
+                    gapRanges.append((i, 0))
                 elif bits[i] == 0 and prevBit == 1:
-                    gapRanges.append(i - 1, 1)
+                    gapRanges.append((i - 1, 1))
 
                 prevBit = bits[i]
 
