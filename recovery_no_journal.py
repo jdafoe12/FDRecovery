@@ -88,6 +88,7 @@ class FileRecoveryNoJournal:
             disk = open(diskO.diskPath, "rb")
             disk.seek(superBlock.blockSize * iBitmapBlockNum)
             bytes = disk.read(ceil(superBlock.inodesPerGroup / 8))
+            disk.close
 
             bits = decoder.leBytesToBitArray(self, bytes)
 
@@ -107,7 +108,7 @@ class FileRecoveryNoJournal:
             prevPosition = (-1, 1)
             for position in gapRanges:
                 if prevPosition[1] == 1 and position[1] == 0:
-                    inodesToCheck.extend(list(range(firstInodeNum + (prevPosition + 1), position)))
+                    inodesToCheck.extend(list(range(firstInodeNum + (prevPosition[1] + 1), position)))
 
 
 
