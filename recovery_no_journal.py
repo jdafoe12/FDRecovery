@@ -108,7 +108,7 @@ class FileRecoveryNoJournal:
             prevPosition = (-1, 1)
             for position in gapRanges:
                 if prevPosition[1] == 1 and position[1] == 0:
-                    inodesToCheck.extend(list(range(firstInodeNum + (prevPosition[1] + 1), position)))
+                    inodesToCheck.extend(list(range(firstInodeNum + (prevPosition[1] + 1), position[1])))
 
 
 
