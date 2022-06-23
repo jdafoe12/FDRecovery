@@ -58,7 +58,7 @@ class FileRecoveryNoJournal:
                 if inode.deletionTime != 0:
                     deletedInodes.append((inodeNum, inode.deletionTime))
 
-            for inodeNum in range(holes[1], (((iBitmap[1] * superBlock.inodesPerGroup) + 1) + superBlock.inodesPerGroup)):
+            for inodeNum in range(holes[1], (((iBitmap[1] * superBlock.inodesPerGroup) + 1) + (superBlock.inodesPerGroup - ((iBitmap[1] * superBlock.inodesPerGroup) - holes[1])))): # Fix this line?
                 
                 inode = read_inode.Inode(diskO, inodeNum, superBlock, False, False)
 
@@ -77,7 +77,7 @@ class FileRecoveryNoJournal:
         blocksPerGroup = superBlock.blocksPerGroup
         inodesPerGroup = superBlock.inodesPerGroup
 
-        iBitmaps = [()]
+        iBitmaps = []
 
         for descriptorNum in range(0, int(superBlock.numBlocks / blocksPerGroup)):
             groupDescriptor = group_descriptor.GroupDescriptor(diskO, descriptorNum, superBlock)
@@ -92,12 +92,12 @@ class FileRecoveryNoJournal:
 
 
 
-    # returns a tuple (list of hole inodes, first end inode)
+    # returns a list [list of hole inodes, first end inode]
     def findHoles(self, diskO, iBitmap, superBlock):
 
         firstInodeNum = (iBitmap[1] * superBlock.inodesPerGroup) + 1
 
-        holeInodes = ([], int)
+        holeInodes = [[]]
 
         disk = open(diskO.diskPath, "rb")
         disk.seek(superBlock.blockSize * iBitmap[0])
@@ -106,7 +106,7 @@ class FileRecoveryNoJournal:
 
         decoder = decode.Decoder
 
-        bits = decoder.leBytesToBitArray(bytes)
+        bits = decoder.leBytesToBitArray(self, bytes)
         
         # list of tuple(position of 1 bit, relative position of 0 bit(0 for left, 1 for right))
         gapRanges = []
@@ -124,9 +124,11 @@ class FileRecoveryNoJournal:
         prevPosition = (-1, 1)
         for position in gapRanges:
             if prevPosition[1] == 1 and position[1] == 0:
-                holeInodes[0].extend(list(range(firstInodeNum + (prevPosition[1] + 1), position[1])))
-            elif prevPosition[1] == 0 and position[1] == 1:
-                holeInodes[1] = position[0] + 1
+                holeInodes[0].extend(list(range(firstInodeNum + (prevPosition[0] + 1), firstInodeNum + (position[0] - 1))))
+            elif prevPosition[1] == 0 and position[1] == 1 and position == gapRanges[-1]:
+                holeInodes.append = position[0] + 1
             prevPosition = position
+
+            holeInodes.append(0)
             
         return holeInodes
