@@ -1,6 +1,7 @@
 
-from inspect import isclass
+
 import decode
+import disks
 import extent_node
 import group_descriptor
 import super_block
@@ -8,10 +9,54 @@ import super_block
 
 class Inode:
 
-    def __init__(self, diskO, inodeNum, superBlock: super_block.SuperBlock, blockData, readPointers: bool):
+    """
+    Reads and stores all necessary inode metadata.
+
+    Attributes
+    ----------
+    deletionTime : int
+        The time that the inode was deleted. If not deleted this will be 0.
+    hasBlockPointers : bool
+        Boolean value indicating whether the inode contains block pointers
+    entries : list
+        List containing Entry objects, which are ranges of block numbers
+        in which the data for the associated file is contained
+
+    Methods
+    -------
+    readExtentTree(diskName, data, nodes: list, superBlock: super_block.SuperBlock)
+        Reads the ext4 extent tree. An extent tree is a data structure containing block pointers.
+    readBlockPointers(diskName, data, superBlock: super_block.SuperBlock)
+        Reads the direct and indirect block pointers contained in ext3 and ext2 inodes.
+    readPointers(data)
+        Reads all direct block pointers in the given byte list
+    readIndirectPointers(diskName, data, depth, superBlock: super_block.SuperBlock)
+        Reads indirect block pointers in the given byte list, to the specified depth
+    """
+
+    def __init__(self, diskO: disks.Disk, inodeNum: int, superBlock: super_block.SuperBlock, blockData, readPointers: bool):
+
+        """
+        Reads and stores the necessary inode metadata
+
+        Parameters
+        ----------
+        diskO : disks.Disk
+            The disk object of the currently selected disk
+        inodeNum : int
+            This may be an explicit inode number, or relative inode within the provided blockData
+        superBlock : super_block.SuperBlock
+            The super block object associated with the disk
+        blockData : bool || bytes
+            If this is a bool, it should be false, indicating whether the inode table data was provided
+            and inodeNum is an explicit inode number
+            If this is type bytes, then the block data was provided and inodeNum is relative inode within blockData
+        readPointers : bool
+            A boolean value indicating whether the block pointers should be read
+        """
         
         # if blockData is false, read from disk. inodeNum will be the inode number of the inode
-        if type(blockData) is bool and blockData == False:
+        if type(blockData) is bool:
 
             # initialize data needed to read the inode from disk
             groupNum: int = int(inodeNum / superBlock.inodesPerGroup)
@@ -31,7 +76,8 @@ class Inode:
             disk.close
 
 
-        # if inodeData is type bytes, it will be an inode table block. inodeNum will be the inode num within that block, starting at 0
+        # if inodeData is type bytes, it will be an inode table block.
+        # inodeNum will be the inode num within that block, starting at 0.
         elif type(blockData) is bytes:
             inodeData = blockData[(inodeNum * superBlock.inodeSize): (inodeNum + 1) * superBlock.inodeSize]
 
@@ -39,7 +85,8 @@ class Inode:
         decoder = decode.Decoder()
 
         # initialize inode data
-        self.deletionTime = decoder.leBytesToDecimal(inodeData, 20, 23)
+        self.deletionTime: int = decoder.leBytesToDecimal(inodeData, 20, 23)
+
         if diskO.diskType == "ext4":
             self.hasBlockPointers = (decoder.leBytesToDecimal(inodeData, 40, 41) == 62218) and (decoder.leBytesToDecimal(inodeData, 42, 43) > 0)
         elif diskO.diskType == "ext3" or diskO.diskType == "ext2":
@@ -54,7 +101,7 @@ class Inode:
             self.entries = self.readBlockPointers(diskO.diskPath, inodeData, superBlock)
 
 
-    def readExtentTree(self, diskName, data, nodes: list, superBlock: super_block.SuperBlock):
+    def readExtentTree(self, diskName, data, nodes: list, superBlock: super_block.SuperBlock) -> list:
 
         # the list nodes is treated as a queue in this algorithm
         nodes.append(extent_node.ExtentNode(data[40:100]))
