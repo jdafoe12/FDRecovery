@@ -1,6 +1,7 @@
 
 import re
 
+
 class Disk:
 
     """
@@ -18,15 +19,20 @@ class Disk:
     None
     """
 
+
     def __init__(self, diskPath, diskType):
 
         """
         Parameters
         ----------
-        diskPath :
+        diskPath : str
+            The path of the disk
+        diskType : str
+            The filesystem type of the disk
         """
         self.diskPath: str = diskPath
         self.diskType: str = diskType
+
 
     def __str__(self):
         return self.diskPath

@@ -24,15 +24,18 @@ class Inode:
 
     Methods
     -------
-    readExtentTree(diskName, data, nodes: list, superBlock: super_block.SuperBlock)
+    readExtentTree(self, diskPath: str, data: bytes, superBlock: super_block.SuperBlock) -> list
         Reads the ext4 extent tree. An extent tree is a data structure containing block pointers.
-    readBlockPointers(diskName, data, superBlock: super_block.SuperBlock)
+    readBlockPointers(self, diskPath: str, data: bytes, superBlock: super_block.SuperBlock) -> list
         Reads the direct and indirect block pointers contained in ext3 and ext2 inodes.
-    readPointers(data)
+    readPointers(self, data: bytes) -> list[int]
         Reads all direct block pointers in the given byte list
-    readIndirectPointers(diskName, data, depth, superBlock: super_block.SuperBlock)
+    readIndirectPointers(self, diskPath: str, data: bytes, depth: int, superBlock: super_block.SuperBlock) -> list[int]
         Reads indirect block pointers in the given byte list, to the specified depth
+    blockNumListToEntries(self, blocks: list[int]) -> list
+        Given a list of block numbers, compresses them down to a list of entries
     """
+
 
     def __init__(self, diskO: disks.Disk, inodeNum: int, superBlock: super_block.SuperBlock, blockData, readPointers: bool):
 
@@ -42,14 +45,18 @@ class Inode:
         Parameters
         ----------
         diskO : disks.Disk
-            The disk object of the currently selected disk
+            The disk object of the currently selected disk.
+            Used to read inode data and indirect block pointers from disk.
         inodeNum : int
-            This may be an explicit inode number, or relative inode within the provided blockData
+            This may be an explicit inode number, or relative inode within the provided blockData.
+            Used to calculate the location of the inode on disk.
         superBlock : super_block.SuperBlock
-            The super block object associated with the disk
+            The super block object associated with the disk.
+            Used in calculating inode location on disk.
+            Provides necessary metadata for reading block pointers.
         blockData : bool || bytes
             If this is a bool, it should be false, indicating whether the inode table data was provided
-            and inodeNum is an explicit inode number
+            and inodeNum is an explicit inode number.
             If this is type bytes, then the block data was provided and inodeNum is relative inode within blockData
         readPointers : bool
             A boolean value indicating whether the block pointers should be read
@@ -95,15 +102,44 @@ class Inode:
         self.entries: list[int] = []
 
         if readPointers and self.hasBlockPointers and diskO.diskType == "ext4":
-            self.entries = self.readExtentTree(diskO.diskPath, inodeData, list(), superBlock)
+            self.entries = self.readExtentTree(diskO.diskPath, inodeData, superBlock)
 
         elif readPointers and self.hasBlockPointers and (diskO.diskType == "ext3" or diskO.diskType == "ext2"):
             self.entries = self.readBlockPointers(diskO.diskPath, inodeData, superBlock)
 
 
-    def readExtentTree(self, diskName, data, nodes: list, superBlock: super_block.SuperBlock) -> list:
+    def readExtentTree(self, diskPath: str, data: bytes, superBlock: super_block.SuperBlock) -> list:
 
-        # the list nodes is treated as a queue in this algorithm
+        """
+         Reads the ext4 extent tree. An extent tree is a data structure containing block pointers.
+
+        Parameters
+        ----------
+        diskPath : str
+            The path of the disk which contains the inode.
+            This is necessary to read indirect block pointers.
+        data : bytes
+            The inodes byte data
+            This contains the extent tree data.
+        superBlock : super_block.SuperBlock
+            The super block associated with the disk.
+            Contains metadata necessary for reading specific block numbers
+
+
+        Returns
+        -------
+        Explicit:
+        entries : list
+            List containing Entry objects, which are ranges of block numbers
+            in which the data for the associated file is contained
+
+        Implicit:
+        None
+        """
+
+        # nodes is treated as a queue in this algorithm
+        nodes: list = []
+
         nodes.append(extent_node.ExtentNode(data[40:100]))
 
         entries: list[extent_node.ExtentEntry] = list()
@@ -112,10 +148,10 @@ class Inode:
         while len(nodes) != 0:
             currentNode = nodes.pop(0)
 
-            # if the node is an index node, add all of the nodes it points to to the list nodes
+            # if the node is an index node, add all the nodes it points to to the list nodes
             if currentNode.header.extentDepth > 0:
                 for index in currentNode.indices:
-                    disk = open(diskName, "rb")
+                    disk = open(diskPath, "rb")
                     disk.seek(superBlock.blockSize * index.nextNodeBlockNum)
                     nodeData = disk.read(superBlock.blockSize)
                     disk.close
@@ -127,23 +163,158 @@ class Inode:
 
         return sorted(entries, key=lambda entry: entry.fileBlockNum)
 
-    def readBlockPointers(self, diskName, data, superBlock: super_block.SuperBlock):
 
-        blocks = []
-        entries = []
+    def readBlockPointers(self, diskPath: str, data: bytes, superBlock: super_block.SuperBlock) -> list:
+
+        """
+        Reads the direct and indirect block pointers contained in ext3 and ext2 inodes.
+
+        Parameters
+        ----------
+        diskPath : str
+            The path of the disk which contains the inode.
+            This is necessary to read indirect block pointers.
+        data : bytes
+            The inodes byte data.
+            This contains the direct and indirect block pointers.
+        superBlock : super_block.SuperBlock
+            The super block associated with the disk.
+            Contains metadata necessary for reading specific block numbers.
+
+        Returns
+        -------
+        Explicit:
+        entries : list
+            List containing Entry objects, which are ranges of block numbers
+            in which the data for the associated file is contained
+
+        Implicit:
+        None
+        """
+
+        blocks: list[int] = []
 
         # Read the 12 direct block pointers
         blocks.extend(self.readPointers(data[40:88]))
 
         # Read the indirect pointers
-        blocks.extend(self.readIndirectPointers(diskName, data[88:92], 1, superBlock))
-        blocks.extend(self.readIndirectPointers(diskName, data[92:96], 2, superBlock))
-        blocks.extend(self.readIndirectPointers(diskName, data[96:100], 3, superBlock))
+        blocks.extend(self.readIndirectPointers(diskPath, data[88:92], 1, superBlock))
+        blocks.extend(self.readIndirectPointers(diskPath, data[92:96], 2, superBlock))
+        blocks.extend(self.readIndirectPointers(diskPath, data[96:100], 3, superBlock))
+
+        entries = self.blockNumListToEntries(blocks)
+
+        return entries
 
 
-        fileBlockNum = 0
-        prevBlock = blocks[0]
-        numBlocksInEntry = 0
+    def readPointers(self, data: bytes) -> list[int]:
+
+        """
+        Given a byte list containing 4 byte block pointers, decodes them and returns a list of block numbers.
+        Is a helper method for both readBlockPointers and readIndirectPointers.
+
+        Parameters
+        ----------
+        data : bytes
+            A byte list containing 4 byte block pointers.
+            Is read from in order to decode the block pointers
+
+        Returns
+        -------
+        Explicit:
+        pointers : list[int]
+            A list containing block numbers of the pointers in data
+
+        Implicit:
+        None
+        """
+        
+        decoder: decode.Decoder = decode.Decoder
+        pointers: list[int] = []
+
+        offSet: int = 0
+        while offSet < len(data):
+            blockNum: int = decoder.leBytesToDecimal(self, data, offSet, offSet + 3)
+            if blockNum != 0:
+                pointers.append(blockNum)
+            offSet += 4
+
+        return pointers
+
+
+    def readIndirectPointers(self, diskPath: str, data: bytes, depth: int, superBlock: super_block.SuperBlock) -> list[int]:
+
+        """
+        Reads indirect block pointers in the given byte list, to the specified depth.
+        Is a helper method for readBlockPointers
+
+        Parameters
+        ----------
+        diskPath : str
+        data : bytes
+            The byte list containing the indirect pointers
+            Is read from in order to follow the block pointers
+        depth : int
+            The depth to which the pointers are indirect
+        superBlock : super_block.SuperBlock
+            The super block associated with the disk.
+            Contains metadata necessary for reading specific block numbers.
+
+        Returns
+        -------
+        Explicit:
+        pointers : list[int]
+            A list containing the pointers which were read
+
+        Implicit:
+        None
+        """
+
+        pointers: list[int] = self.readPointers(data)
+        tempPointers: list[int] = []
+
+        for i in range(0, depth):
+            for indirectPointerBlockNum in pointers:
+                disk = open(diskPath, "rb")
+                disk.seek(superBlock.blockSize * indirectPointerBlockNum)
+                indirectPointerData = disk.read(superBlock.blockSize)
+                disk.close
+                tempPointers.extend(self.readPointers(indirectPointerData))
+            
+            pointers = tempPointers
+            tempPointers = []
+
+        return pointers
+
+
+    def blockNumListToEntries(self, blocks: list[int]) -> list:
+
+        """
+        Given a list of block numbers, compresses them down to a list of entries.
+        Is a helper method for readBlockPointers
+
+        Parameters
+        ----------
+        blocks : list[int]
+            A list of block numbers
+            These are converted into a list of entries
+
+        Returns
+        -------
+        Explicit:
+        entries : list
+            List containing Entry objects, which are ranges of block numbers
+            in which the data for the associated file is contained
+
+        Implicit:
+        None
+        """
+
+        entries: list = []
+
+        fileBlockNum: int = 0
+        prevBlock: int = blocks[0]
+        numBlocksInEntry: int = 0
         entry: BlockPointerEntry = BlockPointerEntry(fileBlockNum, 0, blocks[0])
         for block in blocks:
 
@@ -162,43 +333,10 @@ class Inode:
 
         return sorted(entries, key=lambda entry: entry.fileBlockNum)
 
-    
-    def readPointers(self, data):
-        
-        decoder = decode.Decoder
-        pointers = []
 
-        offSet = 0
-        while offSet < len(data):
-            blockNum = decoder.leBytesToDecimal(self, data, offSet, offSet + 3)
-            if blockNum != 0:
-                pointers.append(blockNum)
-            offSet += 4
-
-        return pointers
-
-    def readIndirectPointers(self, diskName, data, depth, superBlock: super_block.SuperBlock):
-
-        pointers = []
-        tempPointers = []
-
-        pointers = self.readPointers(data)
-
-        for i in range(0, depth):
-            for indirectPointerBlockNum in pointers:
-                disk = open(diskName, "rb")
-                disk.seek(superBlock.blockSize * indirectPointerBlockNum)
-                indirectPointerData = disk.read(superBlock.blockSize)
-                disk.close
-                tempPointers.extend(self.readPointers(indirectPointerData))
-            
-            pointers = tempPointers
-            tempPointers = []
-
-        return pointers
-
-
+# TODO: Make interface for BlockPointerEntry and ExtentEntry to implement
 class BlockPointerEntry:
+
 
     def __init__(self, fileBlockNum, numBlocks, blockNum):
         self.fileBlockNum = fileBlockNum

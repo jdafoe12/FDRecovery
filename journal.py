@@ -11,17 +11,40 @@ class JournalSuperBlock:
 
 class Transaction:
 
-    def __init__(self, descriptorData, journalBlockNum, blockTypeMap: dict, diskO):
+    """
+    Contains the data associated with a journal transaction.
+
+    Attributes
+    ----------
+    transactionNum : int
+        The transaction number associated with the transaction.
+    journalBlockNum : int
+        The block number of the transaction descriptor block relative to the beginning of the journal.
+    commitTime : int
+        The time in UNIX time that the transaction was commited to journal.
+    transactionType : int
+        The type associated with the transaction.
+        If this value is 0, then it was a deletion transaction.
+        If this value is 1, then this transaction is useful in the file recovery process.
+        If this value is 2, then this transaction is not useful in the file recovery process.
+    dataBlocks : list
+        This is a list of the data blocks associated with the transaction.
+        dataBlocks[0] is an int - the block number.
+        dataBlocks[1] is a string - the block type.
+
+    """
+
+    def __init__(self, descriptorData: bytes, journalBlockNum: int, blockTypeMap: dict, diskO: disks.Disk):
 
         decoder = decode.Decoder()
 
         # initialize transaction data fields
-        self.transactionNum = decoder.beBytesToDecimal(descriptorData, 8, 11)
+        self.transactionNum: int = decoder.beBytesToDecimal(descriptorData, 8, 11)
         # this is the journal block num of the descriptor block
-        self.journalBlockNum = journalBlockNum
-        self.commitTime = 0
+        self.journalBlockNum: int = journalBlockNum
+        self.commitTime: int = 0
         # Transaction type 0 is deletion, 1 is useful, 2 is not useful
-        self.transactionType = 2
+        self.transactionType: int = 2
         self.dataBlocks: list = []
 
 

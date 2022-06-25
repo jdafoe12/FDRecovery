@@ -12,7 +12,7 @@ import read_journal
 import disks
 
 
-class App():
+class App:
 
     """
     Initializes all GUI aspects
@@ -40,7 +40,7 @@ class App():
 
         if it is not a journaling filesystem (ext2) then
         this tuple is of the form (inode num, inode deletion time).
-    deletedFiles: list[str]
+    deletedFiles : list[str]
         A list of the identifiers associated with each deleted inode.
         The identifier strings contain the date and time of deletion.
         The indices of this list correspond to the indices of deletedInodes.
@@ -67,7 +67,7 @@ class App():
         When the selected disk changes, this function is called.
         Updates currentDisk, deletedInodes, deletedFiles, and the ListBoxes.
     updateBoxes()
-        A getDeletedFiles calls this function.
+        getDeletedFiles calls this function.
         Changes the ListBoxes to contain the updated deletedFiles.
     getOutputDirectory()
         Prompts the user to select an output directory for recovered files.
@@ -77,6 +77,8 @@ class App():
         Recovers the selected files to outputDirectory.
         updates numRecovered and numRecoveredLabel
     """
+
+
     def __init__(self, master: tk.Tk):
 
         """
@@ -86,6 +88,7 @@ class App():
             The master window for the GUI
         """
 
+        # initialize attributes
         self.numRecovered: int = 0
         self.transactions: list[journal.Transaction] = None
 
@@ -97,13 +100,11 @@ class App():
         self.deletedInodes: list[tuple] = []
         self.deletedFiles: list[str] = []
 
-
         # setup frame
         self.topFrame: tk.Frame = tk.Frame(master=master, height=50)
         self.topFrame.columnconfigure([0, 1, 2], weight=1)
         self.topFrame.rowconfigure([0, 1, 2, 3], weight=1)
         self.topFrame.pack(fill=tk.BOTH, side=tk.TOP, expand=True)
-
 
         # Disk selector
         diskVar: tk.StringVar = tk.StringVar(master, "select disk")
@@ -198,6 +199,7 @@ class App():
         else:
             return
 
+
     def updateBoxes(self):
 
         """
@@ -229,6 +231,7 @@ class App():
         self.selectDeletedFiles1.insert(0, *deletedFiles1)
         self.selectDeletedFiles2.insert(0, *deletedFiles2)
 
+
     def getOutputDirectory(self):
 
         """
@@ -248,6 +251,7 @@ class App():
         self.outputDirectory = tk.filedialog.askdirectory(title="Select Output Directory", initialdir="/home")
         self.outputDirectoryLabel.config(text=f"Output dir: {self.outputDirectory}")
 
+
     def recover(self):
 
         """
@@ -262,7 +266,7 @@ class App():
 
         Implicit:
         numRecovered : int
-            Adds the number of recovered files
+            Adds the number of recovered files to this attribute
         numRecoveredLabel : tk.Label
             Updates to reflect the change to numRecovered
         """
