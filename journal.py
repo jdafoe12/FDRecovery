@@ -1,14 +1,16 @@
 # class JournalSuperBlock contains journalBlockSize, numBlocks, firstLogBlock
+
 import time
 import decode
 
 import disks
 
-
+#TODO: Figure out what to do with this class. I probably need to implement it to make my solution more generalized
 class JournalSuperBlock:
     print()
 
 
+#TODO: Split the init code into more functions. Maybe a function to read the descriptor data, and a function to identify transaction type
 class Transaction:
 
     """
@@ -35,6 +37,21 @@ class Transaction:
     """
 
     def __init__(self, descriptorData: bytes, journalBlockNum: int, blockTypeMap: dict, diskO: disks.Disk):
+
+        """
+        Parameters
+        ----------
+        descriptorData : bytes
+            This is the bytes in which the descriptor block for the transaction is contained
+            This is the data which all transaction data is derived from
+        journalBlockNum : int
+            This is the block number of the descriptor block, relative to the beginning of the journal
+        blockTypeMap : dict
+            The dictionary which has block numbers associated with metadata block type
+            Used to map blocks in the transaction to block types in order to identify the transaction type
+        diskO : disks.Disk
+            The disk object associated with the filesystem
+        """
 
         decoder = decode.Decoder()
 

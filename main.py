@@ -11,7 +11,7 @@ import recovery_no_journal
 import read_journal
 import disks
 
-
+#TODO: try as much as possible to isolate implicit outputs
 class App:
 
     """

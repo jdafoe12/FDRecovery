@@ -1,17 +1,63 @@
 
-from math import ceil, floor
+
+from math import ceil
 
 import time
 import os
 
+import disks
 import group_descriptor
 import super_block
 import decode
 import read_inode
 
+
 class FileRecoveryNoJournal:
 
-    def recoverFiles(self, diskO, deletedInodes, numToRecover, filePath):
+    """
+    Contains methods directly related to file recovery in filesystems without journals (ext2).
+
+    Methods
+    -------
+    recoverFiles(self, diskO: disks.Disk, deletedInodes: list[tuple], numToRecover: int, outputPath: str)
+        Attempts to recover the files that the user has selected.
+    getDeletedInodes(self, diskO: disks.Disk)
+        Gets a list of deleted inodes.
+    getInodeBitmaps(self, diskO: disks.Disk, superBlock:super_block.SuperBlock)
+        Gets a list of block numbers associated with inode bitmaps.
+    findHoles(self, diskO: disks.Disk, iBitmap: tuple, superBlock: super_block.SuperBlock)
+        Given a list of inode bitmaps, returns the inode numbers which are free and surrounded by used inodes.
+        These inodes are likely to be associated with deleted files.
+    """
+
+    def recoverFiles(self, diskO: disks.Disk, deletedInodes: list[tuple], numToRecover: int, outputPath: str):
+
+        """
+        Attempts to recover the files that the user has selected.
+
+        Parameters
+        ----------
+        diskO : disks.Disk
+            The disk object associated with the filesystem.
+        deletedInodes: list[tuple]
+            List of the inodes which the user selected for recovery.
+            inodes in this case are stored as a tuple of the form
+            (inode num, inode deletion time).
+        numToRecover : int
+            The number of files within deletedInodes
+            that the user wishes to recover.
+        outputPath : str
+            The path of the output directory.
+
+        Returns
+        -------
+        Explicit:
+        numRecovered : int
+            The number of successfully recovered files.
+
+        Implicit:
+        Writes recovered files to outputPath/recoveredFile_%s.
+        """
 
         superBlock = super_block.SuperBlock(diskO)
 
@@ -24,7 +70,7 @@ class FileRecoveryNoJournal:
 
             numRecovered += 1
 
-            recoveredFile = open("%s/recoveredFile_%s" % (filePath, (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(deletedInode[1])) + f"_num_{numRecovered}")), "ab")
+            recoveredFile = open("%s/recoveredFile_%s" % (outputPath, (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(deletedInode[1])) + f"_num_{numRecovered}")), "ab")
 
             for entry in inode.entries:
                 disk = open(diskO.diskPath, "rb")
@@ -39,7 +85,27 @@ class FileRecoveryNoJournal:
         return numRecovered
 
     # returns a list of deleted inodes as tuple (inode num, inode deletion time)
-    def getDeletedInodes(self, diskO):
+    def getDeletedInodes(self, diskO: disks.Disk):
+
+        """
+        Gets a list of deleted inodes.
+
+        Parameters
+        ----------
+        diskO : disks.Disk
+            The disk object associated with the filesystem.
+
+        Returns
+        -------
+        Explicit:
+        DeletedInodes : list[tuple]
+            List of the inodes which the user selected for recovery.
+            inodes in this case are stored as a tuple of the form
+            (inode num, inode deletion time).
+
+        Implicit:
+        None
+        """
 
         # flush filesystem cache
         os.sync()
@@ -76,7 +142,27 @@ class FileRecoveryNoJournal:
         return deletedInodes
 
     # returns a list of inode bitmaps which are tuple(iBitmapBlockNum, descriptorNum)
-    def getInodeBitmaps(self, diskO, superBlock):
+    def getInodeBitmaps(self, diskO: disks.Disk, superBlock:super_block.SuperBlock):
+
+        """
+        Gets a list of block numbers associated with inode bitmaps.
+
+        Parameters
+        ----------
+        diskO : disks.Disk
+            The disk object associated with the filesystem.
+        superBlock : super_block.SuperBlock
+            The super block associated with the filesystem.
+
+        Returns
+        -------
+        Explicit:
+        iBitmaps : list[tuple[int, int]]
+            A list of inode bitmaps which are of the form tuple(iBitmapBlockNum, descriptorNum).
+
+        Implicit:
+        None
+        """
         blockSize = superBlock.blockSize
         blocksPerGroup = superBlock.blocksPerGroup
         inodesPerGroup = superBlock.inodesPerGroup
@@ -93,11 +179,35 @@ class FileRecoveryNoJournal:
         return iBitmaps
 
 
-
-
-
     # returns a list [list of hole inodes, first end inode]
-    def findHoles(self, diskO, iBitmap, superBlock):
+    def findHoles(self, diskO: disks.Disk, iBitmap: tuple, superBlock: super_block.SuperBlock):
+
+        """
+        Given a list of inode bitmaps, returns the inode numbers which are free and surrounded by used inodes.
+        These inodes are likely to be associated with deleted files.
+
+        Parameters
+        ----------
+        diskO : disks.Disk
+            The disk object associated with the filesystem.
+        iBitmap : tuple
+            A tuple associated with an inode bitmap of the form tuple(iBitmapBlockNum, descriptorNum).
+        superBlock : super_block.SuperBlock
+            The super block associated with the filesystem.
+
+        Returns
+        -------
+        Explicit:
+            holeInodes : list[list | int]
+                The inode numbers which are free and surrounded by used inodes.
+                These inodes are likely to be associated with deleted files.
+                holeInodes[0] contains a list of Inodes which are likely associated with deleted files.
+                holeInodes[1] contains the inode number directly following the last used inode.
+
+
+        Implicit:
+        None
+        """
 
         # Note that inode numbers start at 1
         # This is the first inode number represented in the bitmap
@@ -116,13 +226,6 @@ class FileRecoveryNoJournal:
 
         bits = decoder.leBytesToBitArray(self, bytes)
 
-        # This needs to be a general solution. I do not think it is
-        # if firstInodeNum == 1:
-        #     bits = bits[11:-1]
-        #     firstInodeNum = 12
-        #     print("pizza")
-        
-        # list of tuple(position of 1 bit, relative position of 0 bit(0 for left, 1 for right))
         gapRanges = []
 
         prevBit = 1
@@ -135,8 +238,6 @@ class FileRecoveryNoJournal:
             prevBit = bits[i]
 
 
-
-
         prevPosition = (-1, 1)
         for position in gapRanges:
             if prevPosition[1] == 1 and position[1] == 0:
@@ -145,7 +246,6 @@ class FileRecoveryNoJournal:
                 holeInodes.append(firstInodeNum + (position[0] + 1))
             prevPosition = position
 
-            # I need to figure out what this default should be
             holeInodes.append(firstInodeNum)
 
         return holeInodes
