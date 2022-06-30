@@ -94,6 +94,7 @@ class Inode:
         # initialize inode data
         self.deletionTime: int = decoder.leBytesToDecimal(inodeData, 20, 23)
 
+
         if diskO.diskType == "ext4":
             self.hasBlockPointers = (decoder.leBytesToDecimal(inodeData, 40, 41) == 62218) and (decoder.leBytesToDecimal(inodeData, 42, 43) > 0)
         elif diskO.diskType == "ext3" or diskO.diskType == "ext2":
@@ -101,11 +102,13 @@ class Inode:
 
         self.entries: list[int] = []
 
-        if readPointers and self.hasBlockPointers and diskO.diskType == "ext4":
-            self.entries = self.readExtentTree(diskO.diskPath, inodeData, superBlock)
+        if readPointers and self.hasBlockPointers:
 
-        elif readPointers and self.hasBlockPointers and (diskO.diskType == "ext3" or diskO.diskType == "ext2"):
-            self.entries = self.readBlockPointers(diskO.diskPath, inodeData, superBlock)
+            if diskO.diskType == "ext4" and superBlock.hasExtent:
+                self.entries = self.readExtentTree(diskO.diskPath, inodeData, superBlock)
+
+            elif diskO.diskType == "ext3" or diskO.diskType == "ext2" or (diskO.diskType == "ext4" and not superBlock.hasExtent):
+                self.entries = self.readBlockPointers(diskO.diskPath, inodeData, superBlock)
 
 
     def readExtentTree(self, diskPath: str, data: bytes, superBlock: super_block.SuperBlock) -> list:
@@ -207,7 +210,7 @@ class Inode:
         return entries
 
 
-    def readPointers(self, data: bytes) -> list[int]:
+    def readPointers(self, data: bytes) -> list:
 
         """
         Given a byte list containing 4 byte block pointers, decodes them and returns a list of block numbers.
@@ -242,7 +245,7 @@ class Inode:
         return pointers
 
 
-    def readIndirectPointers(self, diskPath: str, data: bytes, depth: int, superBlock: super_block.SuperBlock) -> list[int]:
+    def readIndirectPointers(self, diskPath: str, data: bytes, depth: int, superBlock: super_block.SuperBlock) -> list:
 
         """
         Reads indirect block pointers in the given byte list, to the specified depth.
@@ -287,7 +290,7 @@ class Inode:
         return pointers
 
 
-    def blockNumListToEntries(self, blocks: list[int]) -> list:
+    def blockNumListToEntries(self, blocks: list) -> list:
 
         """
         Given a list of block numbers, compresses them down to a list of entries.

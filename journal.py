@@ -1,16 +1,33 @@
-# class JournalSuperBlock contains journalBlockSize, numBlocks, firstLogBlock
+
 
 import time
+
 import decode
-
 import disks
+import super_block
 
-#TODO: Figure out what to do with this class. I probably need to implement it to make my solution more generalized
+
 class JournalSuperBlock:
-    print()
+    
+    """
+    Contains journal metadata
+
+    Attributes
+    ----------
+    blockSize : int
+        The size of blocks within the journal
+    hasCSumv3 : bool
+        Indicates whether the journal has the JBD2_FEATURE_INCOMPAT_CSUM_V3 feature
+        The structure of block tags is determined by this feature
+    """
+
+    def __init__(self, data: bytes):
+        decoder = decode.Decoder()
+
+        self.blockSize: int = decoder.beBytesToDecimal(data, 12, 15)
+        self.hasCSumV3: bool = data[0x2B] & 0b00010000 == 16
 
 
-#TODO: Split the init code into more functions. Maybe a function to read the descriptor data, and a function to identify transaction type
 class Transaction:
 
     """
@@ -34,9 +51,18 @@ class Transaction:
         dataBlocks[0] is an int - the block number.
         dataBlocks[1] is a string - the block type.
 
+    Methods 
+    -------
+    getBlocks(self, blockTypeMap: dict, data: bytes, journalSuperBlock: JournalSuperBlock, superBlock: super_block.SuperBlock) -> list
+        Gets a list of all the blocks, stored as a tuple (blockNum, blockType).
+    getTransactionType(dataBlocks: list) -> int
+        Given the list of data blocks, determines the transaction type. Returns an int 0-2 indicating this transaction type:
+        Transaction type 0 is deletion, 1 is useful, 2 is not useful.
+
+
     """
 
-    def __init__(self, descriptorData: bytes, journalBlockNum: int, blockTypeMap: dict, diskO: disks.Disk):
+    def __init__(self, descriptorData: bytes, journalBlockNum: int, blockTypeMap: dict, diskO: disks.Disk, journalSuperBlock: JournalSuperBlock, superBlock: super_block.SuperBlock):
 
         """
         Parameters
@@ -51,6 +77,10 @@ class Transaction:
             Used to map blocks in the transaction to block types in order to identify the transaction type
         diskO : disks.Disk
             The disk object associated with the filesystem
+        journalSuperBlock : JournalSuperBlock
+            The super block associated with the journal
+        superBlock : super_block.SuperBlock
+            The super block associated with the filesystem
         """
 
         decoder = decode.Decoder()
@@ -60,66 +90,115 @@ class Transaction:
         # this is the journal block num of the descriptor block
         self.journalBlockNum: int = journalBlockNum
         self.commitTime: int = 0
+        
+        self.dataBlocks: list = self.getBlocks(blockTypeMap, descriptorData[12:], journalSuperBlock, superBlock)
+
         # Transaction type 0 is deletion, 1 is useful, 2 is not useful
-        self.transactionType: int = 2
-        self.dataBlocks: list = []
+        self.transactionType = self.getTransactionType(self.dataBlocks)
 
+        
 
-        # a few things are assumed in this code. the sizes of the block tags, and the journal block size
-        offset = 12
-        if diskO.diskType == "ext4":
-            distance = 28
-        elif diskO.diskType == "ext3":
-            distance = 20
-        numBlocks = 0
-        # loop goes through all block tags within the descriptor
-        while (distance < len(descriptorData)) and (decoder.beBytesToDecimal(descriptorData, offset, distance) != 0):
-            
-            blockNum = decoder.beBytesToDecimal(descriptorData, offset, offset + 3)
+    def getTransactionType(self, dataBlocks: list) -> int:
 
-            # populate the list of data blocks with all of the data blocks represented by the group descriptor
-            if blockNum in blockTypeMap:
-                self.dataBlocks.append((blockNum, blockTypeMap.get(blockNum)))
+        """
+        Given the list of data blocks, determines the transaction type. Returns an int 0-2 indicating this transaction type:
+        Transaction type 0 is deletion, 1 is useful, 2 is not useful.
 
-            else:
-                self.dataBlocks.append((blockNum, "unknownBlock"))
+        Parameters
+        ----------
+        dataBlocks : list
+            The list of data blocks in the transaction.
+            This algorithm looks at the type of block and the order they are in
+            in order to determine transaction type.
+        
+        Returns
+        -------
+        transactionType : int
+            An int 0-2 indicating this transaction type:
+            Transaction type 0 is deletion, 1 is useful, 2 is not useful.
+        """
 
-
-            # update offset values
-            if numBlocks >= 1:
-                if diskO.diskType == "ext4":
-                    offset += 16
-                elif diskO.diskType == "ext3":
-                    offset += 8
-
-            else:
-                if diskO.diskType == "ext4":
-                    offset += 32
-                elif diskO.diskType == "ext3":
-                    offset += 24
-
-            distance = (offset + 16)
-            numBlocks += 1
-
+        transactionType: int = 2
 
         # determine the transaction type
-        # this is very basic right now. This algorithm only works when the number of files deleted within the transaction is not too large
         blockTypesInOrder: list = []
         numITableBlock = 0
-        for block in self.dataBlocks:
+        for block in dataBlocks:
             if block[1] == "iTableBlock":
                 numITableBlock += 1
             blockTypesInOrder.append(block[1])
 
-
         if blockTypesInOrder[0:3] == ["unknownBlock", "iTableBlock", "unknownBlock"]:
-            self.transactionType = 0
-            
+            transactionType = 0
         elif numITableBlock > 1 and (blockTypesInOrder[0] == "unknownBlock" or blockTypesInOrder[0] == "iTableBlock") and "dBitmapBlock" in blockTypesInOrder:
-            self.transactionType = 0
-
+            transactionType = 0
         elif numITableBlock > 0:
-            self.transactionType = 1
+            transactionType = 1
+
+        return transactionType
+    
+
+    def getBlocks(self, blockTypeMap: dict, data: bytes, journalSuperBlock: JournalSuperBlock, superBlock: super_block.SuperBlock) -> list:
+
+        """
+        gets a list of all the blocks, stored as a tuple (blockNum, blockType)
+
+        Parameters
+        ----------
+        blockTypeMap : dict
+            The dictionary which has block numbers associated with metadata block type
+            Used to map blocks in the transaction to block types in order to identify the transaction type
+        data : bytes
+            This is the bytes in which the descriptor block for the transaction is contained
+            Read in order to get block numbers
+        journalSuperBlock : JournalSuperBlock
+            The super block associated with the journal
+        superBlock : super_block.SuperBlock
+            The super block associated with the filesystem
+
+        Returns
+        -------
+        blocks
+            A list of blocks involved in the transaction
+        """
+
+        decoder = decode.Decoder()
+
+        blocks: list = []
+
+        if journalSuperBlock.hasCSumV3:
+            modifier: int = 32
+        elif not journalSuperBlock.hasCSumV3 and not superBlock.bit64:
+            modifier: int = 24
+        elif not journalSuperBlock.hasCSumV3 and superBlock.bit64:
+            modifier: int = 28
+
+        offSet: int = 0
+        while True:
+
+            if superBlock.bit64:
+                blockNum: int = decoder.beBytesToDecimal(data, offSet, offSet + 3) + (decoder.beBytesToDecimal(data, offSet + 8, offSet + 11) * pow(2, 32))
+            else:
+                blockNum: int = decoder.beBytesToDecimal(data, offSet, offSet + 3)
+
+            if blockNum in blockTypeMap:
+                blocks.append((blockNum, blockTypeMap.get(blockNum)))
+
+            else:
+                blocks.append((blockNum, "unknownBlock"))
+
+            UUIDFlag: bool = data[offSet + 7] & 0b00000010 == 0b00000010
+            endFlag: bool = data[offSet + 7] & 0b00001000 == 0b00001000
+                
+            if endFlag:
+                break
+
+            offSet += modifier
+
+            if UUIDFlag:
+                offSet -= 16
+
+        return blocks
 
 
     def __str__(self):
@@ -148,3 +227,4 @@ class Transaction:
         transactionAsString += f"Commit Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.commitTime))}\n"
 
         return transactionAsString
+

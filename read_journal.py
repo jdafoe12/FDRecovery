@@ -45,7 +45,7 @@ class ReadJournal:
         self.diskO = diskO
 
 
-    def readFileSystemJournal(self) -> list[journal.Transaction]:
+    def readFileSystemJournal(self) -> list:
 
         """
         Reads the filesystem journal, encapsulating its data in journal.Transaction objects.
@@ -74,13 +74,20 @@ class ReadJournal:
 
         fileSystemJournalInode = read_inode.Inode(self.diskO, superBlock.journalInode, superBlock, False, True)
 
+        # Read Journal Super Block
+        disk = open(self.diskO.diskPath, "rb")
+        disk.seek(fileSystemJournalInode.entries[0].blockNum * superBlock.blockSize)
+        jSuperData = disk.read(1024)
+        journalSuperBlock = journal.JournalSuperBlock(jSuperData)
+        disk.close
+
         
         transactionList = []
 
         journalBlockNum = 0
         deleteLast = False
         hasCommitBlock = True
-        # an entry is a extent entry which specify the block numbers of the journal
+        # An entry is a extent entry which specify the block numbers of the journal
         for entry in fileSystemJournalInode.entries:
 
             disk = open(self.diskO.diskPath, "rb")
@@ -101,7 +108,7 @@ class ReadJournal:
                     hasCommitBlock = False
 
                     # add a new transaction
-                    transactionList.append(journal.Transaction(block, journalBlockNum, blockTypeMap, self.diskO))
+                    transactionList.append(journal.Transaction(block, journalBlockNum, blockTypeMap, self.diskO, journalSuperBlock, superBlock))
 
                 # if this block in the journal is the commit block for the current transaction, set the commit time
                 elif len(transactionList) > 0:
@@ -122,7 +129,7 @@ class ReadJournal:
         return transactionList
 
 
-    def getBlockTypeMap(self, superBlock: super_block.SuperBlock) -> dict[int, str]:
+    def getBlockTypeMap(self, superBlock: super_block.SuperBlock) -> dict:
 
         """
         Reads through filesystem metadata to create a dictionary associating block numbers with metadata block type.

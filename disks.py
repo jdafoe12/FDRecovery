@@ -38,7 +38,7 @@ class Disk:
         return self.diskPath
 
 
-def getDisks() -> list[Disk]:
+def getDisks() -> list:
 
     """
     Gets all valid disks and puts them in a list

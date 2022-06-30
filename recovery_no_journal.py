@@ -30,7 +30,7 @@ class FileRecoveryNoJournal:
         These inodes are likely to be associated with deleted files.
     """
 
-    def recoverFiles(self, diskO: disks.Disk, deletedInodes: list[tuple], numToRecover: int, outputPath: str):
+    def recoverFiles(self, diskO: disks.Disk, deletedInodes: list, numToRecover: int, outputPath: str):
 
         """
         Attempts to recover the files that the user has selected.

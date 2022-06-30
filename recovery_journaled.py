@@ -28,7 +28,7 @@ class FileRecoveryJournaled:
 
 
     #TODO: this method is a bit messy, maybe split into more functions?
-    def recoverFiles(self, diskO: disks.Disk, transactions: list[journal.Transaction], deletedInodes: list[tuple], numToRecover: int, outputPath: str):
+    def recoverFiles(self, diskO: disks.Disk, transactions: list, deletedInodes: list, numToRecover: int, outputPath: str):
 
         """
         Attempts to recover the files that the user has selected.
@@ -109,7 +109,7 @@ class FileRecoveryJournaled:
 
         return numRecovered
 
-    def getDeletedInodes(self, diskO: disks.Disk, transactions: list[journal.Transaction]):
+    def getDeletedInodes(self, diskO: disks.Disk, transactions: list):
 
         """
         Gets a list of all deleted inodes, as recorded in journal deletion transactions.

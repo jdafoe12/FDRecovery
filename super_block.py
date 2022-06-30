@@ -22,6 +22,11 @@ class SuperBlock:
         The number of blocks in the filesystem
     numInodes : int
         The number of inodes in the filesystem
+    hasExtent : boolean
+        If the filesystem type is ext4, the extent feature needs to be checked
+        to understand whether to read extents or block pointers
+    bit64 : boolean
+        Indicates whether the 64bit flag is set
     """
 
     def __init__(self, diskO: disks.Disk):
@@ -44,8 +49,10 @@ class SuperBlock:
 
         if diskO.diskType == "ext4" or diskO.diskType == "ext3":
             self.journalInode: int = decoder.leBytesToDecimal(data, 224, 227)
+            self.bit64 = data[0x60] & 0b00010000 == 0b00010000
 
         if diskO.diskType == "ext4":
+            self.hasExtent = (data[0x60] & 0b00000010) == 0b00000010
             self.groupDescriptorSize: int = decoder.leBytesToDecimal(data, 254, 255)
 
         elif diskO.diskType == "ext3" or diskO.diskType == "ext2":
