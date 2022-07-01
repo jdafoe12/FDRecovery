@@ -1,7 +1,8 @@
 
 
 from math import floor, ceil
-from tkinter import filedialog
+from select import select
+from tkinter import END, filedialog
 import tkinter as tk
 import time
 
@@ -76,6 +77,10 @@ class App:
         Called when recoveryButton is pushed.
         Recovers the selected files to outputDirectory.
         updates numRecovered and numRecoveredLabel
+    selectAll()
+        Called when selectAll button is pushed.
+        When there are no files selected, this function selects all files.
+        When there are files selected, this function deselects all files.
     """
 
 
@@ -115,18 +120,18 @@ class App:
         labelSelect: tk.Label = tk.Label(master=self.topFrame, anchor=tk.CENTER, text="Select Files to Recover:")
         labelSelect.grid(column=1, row=0, sticky="nsew")
 
-        # Help button opens a help window.
-        helpButton: tk.Button = tk.Button(master=self.topFrame, text="help")
-        helpButton.grid(column=2, row=0, sticky="e")
-
         # Setup 3 listBox with list of strings to show the deleted files
         # so the user can select which ones to recover.
-        self.selectDeletedFiles0: tk.Listbox = tk.Listbox(master=self.topFrame, selectmode=tk.MULTIPLE, height=30)
-        self.selectDeletedFiles1: tk.Listbox = tk.Listbox(master=self.topFrame, selectmode=tk.MULTIPLE, height=30)
-        self.selectDeletedFiles2: tk.Listbox = tk.Listbox(master=self.topFrame, selectmode=tk.MULTIPLE, height=30)
+        self.selectDeletedFiles0: tk.Listbox = tk.Listbox(master=self.topFrame, exportselection=False, selectmode=tk.MULTIPLE, height=30)
+        self.selectDeletedFiles1: tk.Listbox = tk.Listbox(master=self.topFrame, exportselection=False, selectmode=tk.MULTIPLE, height=30)
+        self.selectDeletedFiles2: tk.Listbox = tk.Listbox(master=self.topFrame, exportselection=False, selectmode=tk.MULTIPLE, height=30)
         self.selectDeletedFiles0.grid(column=0, row=1, sticky="nesw")
         self.selectDeletedFiles1.grid(column=1, row=1, sticky="nesw")
         self.selectDeletedFiles2.grid(column=2, row=1, sticky="nesw")
+
+        # Button to select all deleted files for recovery
+        selectAllButton: tk.Button = tk.Button(master=self.topFrame, text="Select/Deselect All", command=self.selectAll)
+        selectAllButton.grid(column=2, row=0, sticky="e")
 
         # When pressed, user can select output directory.
         getOutputDirectoryButton: tk.Button = tk.Button(master=self.topFrame, text="Select output directory", command=self.getOutputDirectory)
@@ -251,6 +256,16 @@ class App:
         self.outputDirectory = tk.filedialog.askdirectory(title="Select Output Directory", initialdir="/home")
         self.outputDirectoryLabel.config(text=f"Output dir: {self.outputDirectory}")
 
+    def selectAll(self):
+        if len(self.selectDeletedFiles0.curselection()) > 0 or len(self.selectDeletedFiles1.curselection()) > 0 or len(self.selectDeletedFiles2.curselection()) > 0:
+            self.selectDeletedFiles0.selection_clear(0, END)
+            self.selectDeletedFiles1.selection_clear(0, END)
+            self.selectDeletedFiles2.selection_clear(0, END)
+        else:
+            self.selectDeletedFiles0.select_set(0, END)
+            self.selectDeletedFiles1.select_set(0, END)
+            self.selectDeletedFiles2.select_set(0, END)
+
 
     def recover(self):
 
@@ -289,6 +304,10 @@ class App:
             self.numRecovered += fileRecovery.recoverFiles(self.currentDisk, self.transactions, toRecover, len(toRecover), self.outputDirectory)
         elif self.currentDisk.diskType == "ext2":
             self.numRecovered += fileRecovery.recoverFiles(self.currentDisk, toRecover, len(toRecover), self.outputDirectory)
+
+        self.selectDeletedFiles0.selection_clear(0, END)
+        self.selectDeletedFiles1.selection_clear(0, END)
+        self.selectDeletedFiles2.selection_clear(0, END)
 
         self.recoveredLabel.config(text=f"Recovered {self.numRecovered} files")
 
