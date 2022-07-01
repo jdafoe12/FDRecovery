@@ -1,7 +1,5 @@
 
 
-from distutils.log import error
-from multiprocessing.sharedctypes import Value
 import disks
 import read_journal
 
