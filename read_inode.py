@@ -62,10 +62,10 @@ class Inode:
             A boolean value indicating whether the block pointers should be read
         """
         
-        # if blockData is false, read from disk. inodeNum will be the inode number of the inode
+        # if blockData is false, read from disk. inodeNum will be the inode number of the inode.
         if type(blockData) is bool:
 
-            # initialize data needed to read the inode from disk
+            # initialize data needed to read the inode from disk.
             groupNum: int = int(inodeNum / superBlock.inodesPerGroup)
 
             groupDescriptor = group_descriptor.GroupDescriptor(diskO, groupNum, superBlock)
@@ -91,19 +91,20 @@ class Inode:
 
         decoder = decode.Decoder()
 
-        # initialize inode data
         self.deletionTime: int = decoder.leBytesToDecimal(inodeData, 20, 23)
 
-
         if diskO.diskType == "ext4":
-            self.hasBlockPointers = (decoder.leBytesToDecimal(inodeData, 40, 41) == 62218) and (decoder.leBytesToDecimal(inodeData, 42, 43) > 0)
+            # 0xF30A (62218) is the magic number indicating an ext4 extent node. 
+            # If the following bytes are not empty, then there are block pointers.
+            self.hasBlockPointers = ((decoder.leBytesToDecimal(inodeData, 40, 41) == 62218)
+            and (decoder.leBytesToDecimal(inodeData, 42, 43) > 0))
         elif diskO.diskType == "ext3" or diskO.diskType == "ext2":
+            # The first block pointer (in ext2/3) is located in bytes 40-43 of the inode structure
             self.hasBlockPointers = (decoder.leBytesToDecimal(inodeData, 40, 43) > 0)
 
         self.entries: list[int] = []
 
         if readPointers and self.hasBlockPointers:
-
             if diskO.diskType == "ext4" and superBlock.hasExtent:
                 self.entries = self.readExtentTree(diskO.diskPath, inodeData, superBlock)
 
@@ -131,13 +132,8 @@ class Inode:
 
         Returns
         -------
-        Explicit:
-        entries : list
             List containing Entry objects, which are ranges of block numbers
             in which the data for the associated file is contained
-
-        Implicit:
-        None
         """
 
         # nodes is treated as a queue in this algorithm
@@ -186,13 +182,9 @@ class Inode:
 
         Returns
         -------
-        Explicit:
         entries : list
             List containing Entry objects, which are ranges of block numbers
             in which the data for the associated file is contained
-
-        Implicit:
-        None
         """
 
         blocks: list[int] = []
@@ -305,12 +297,8 @@ class Inode:
         Returns
         -------
         Explicit:
-        entries : list
             List containing Entry objects, which are ranges of block numbers
-            in which the data for the associated file is contained
-
-        Implicit:
-        None
+            in which the data for the associated file is contained.
         """
 
         entries: list = []
@@ -337,9 +325,21 @@ class Inode:
         return sorted(entries, key=lambda entry: entry.fileBlockNum)
 
 
-# TODO: Make interface for BlockPointerEntry and ExtentEntry to implement
 class BlockPointerEntry:
+    """
+    An entry, containing data on a contigous block which contain the files data
 
+    Attributes
+    ----------
+    fileBlockNum : int
+        The block number which the first block pointer is associated with,
+        relative to the beginning of the file.
+    numBlocks : int
+        The number of blocks which this extent entry refers to.
+    blockNum : int
+        The first block number in a contiguous
+        run of blocks (with length numBlocks) which this extent entry refers to.
+    """
 
     def __init__(self, fileBlockNum, numBlocks, blockNum):
         self.fileBlockNum = fileBlockNum

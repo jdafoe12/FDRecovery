@@ -60,12 +60,11 @@ class ReadJournal:
         None
         """
 
-        # flush filesystem cache
+        # Flush filesystem cache.
         os.sync()
         drop_caches = open("/proc/sys/vm/drop_caches", "w")
         drop_caches.write("3")
         drop_caches.close()
-
 
         superBlock = super_block.SuperBlock(self.diskO)
         decoder = decode.Decoder()
@@ -74,55 +73,51 @@ class ReadJournal:
 
         fileSystemJournalInode = read_inode.Inode(self.diskO, superBlock.journalInode, superBlock, False, True)
 
-        # Read Journal Super Block
+        # Read Journal Super Block.
         disk = open(self.diskO.diskPath, "rb")
         disk.seek(fileSystemJournalInode.entries[0].blockNum * superBlock.blockSize)
         jSuperData = disk.read(1024)
         journalSuperBlock = journal.JournalSuperBlock(jSuperData)
         disk.close
 
-        
         transactionList = []
 
         journalBlockNum = 0
         deleteLast = False
         hasCommitBlock = True
-        # An entry is a extent entry which specify the block numbers of the journal
+        # An entry specifies the block numbers of the journal.
         for entry in fileSystemJournalInode.entries:
 
             disk = open(self.diskO.diskPath, "rb")
             disk.seek(superBlock.blockSize * entry.blockNum)
 
-            # for each block in entry
             for i in range(0, entry.numBlocks):
                 block = disk.read(superBlock.blockSize)
 
-                # if this block in the journal is a descriptor block
+                # Bytes 0-3 are a magic number indicating a journal transaction metadata block.
+                # The number in bytes 4-7 indicates the metadata block type. 1 is a descriptor block, 2 is a commit block.
                 if (decoder.beBytesToDecimal(block, 0, 3) == 3225106840) and (decoder.beBytesToDecimal(block, 4, 7) == 1):
-
                     if deleteLast or not hasCommitBlock:
                         transactionList.pop()
                         deleteLast = False
                     
-                    # reset values for new transaction
                     hasCommitBlock = False
 
-                    # add a new transaction
-                    transactionList.append(journal.Transaction(block, journalBlockNum, blockTypeMap, self.diskO, journalSuperBlock, superBlock))
+                    transactionList.append(journal.Transaction(block, journalBlockNum, blockTypeMap, journalSuperBlock, superBlock))
 
-                # if this block in the journal is the commit block for the current transaction, set the commit time
                 elif len(transactionList) > 0:
-                    if (decoder.beBytesToDecimal(block, 0, 3) == 3225106840) and (decoder.beBytesToDecimal(block, 4, 7) == 2) and (decoder.beBytesToDecimal(block, 8, 11) == transactionList[-1].transactionNum):
+                    # if this block in the journal is the commit block for the current transaction, set the commit time.
+                    if ((decoder.beBytesToDecimal(block, 0, 3) == 3225106840) and (decoder.beBytesToDecimal(block, 4, 7) == 2)
+                    and (decoder.beBytesToDecimal(block, 8, 11) == transactionList[-1].transactionNum)):
                         transactionList[-1].commitTime = decoder.beBytesToDecimal(block, 48, 55)
                         hasCommitBlock = True
 
-                    # if this block in the journal is a commit block, but not for the current transaction, remove the transaction
+                    # if this block in the journal is a commit block, but not for the current transaction, remove the transaction.
                     elif (decoder.beBytesToDecimal(block, 0, 3) == 3225106840) and (decoder.beBytesToDecimal(block, 4, 7) == 2) and (decoder.beBytesToDecimal(block, 8, 11) != transactionList[-1].transactionNum):
                         if not hasCommitBlock:
                             deleteLast = True
 
                 journalBlockNum += 1
-
 
             disk.close
 
@@ -143,57 +138,44 @@ class ReadJournal:
 
         Returns
         -------
-        Explicit:
         blockTypeMap : dict[int, str]
             A dictionary associating block numbers with metadata block type.
-
-        Implicit:
-        None
         """
 
-        # initialize constant variables
         blockSize = superBlock.blockSize
         blocksPerGroup = superBlock.blocksPerGroup
         inodesPerGroup = superBlock.inodesPerGroup
         inodeSize = superBlock.inodeSize
         numDescriptorsPerBlock = (blockSize / superBlock.groupDescriptorSize)
 
-
         blockTypeMap = {}
 
-
-        # initialize counter variables
         descriptorBlockNum = 1
         descriptorNumInBlock = 0
 
+        # numBlocks / blocksPerGroup represents the number of groups.
         for descriptorNum in range(0, int(superBlock.numBlocks / blocksPerGroup)):
 
             groupDescriptor = group_descriptor.GroupDescriptor(self.diskO, descriptorNum, superBlock)
 
             inodeTableLoc = groupDescriptor.inodeTableLoc
 
-
-            # block range of inode table is ((inodesPerGroup * InodeSize) / blockSize) rounded up
             for iTableBlockNum in range(inodeTableLoc, inodeTableLoc + ceil((inodesPerGroup * inodeSize) / blockSize)):
                 blockTypeMap.update({iTableBlockNum:"iTableBlock"})
 
-            # block range of data bitmap is (NumBlocksPerGroup / (BlockSize * 8)) rounded up
             for dBitmapBlockNum in range(groupDescriptor.blockBitMapLoc, groupDescriptor.blockBitMapLoc + ceil(blocksPerGroup / (blockSize * 8))):
                 blockTypeMap.update({dBitmapBlockNum:"dBitmapBlock"})
 
-            # block range of inode bitmap is (NumInodesPerGroup / (BlockSize * 8)) rounded up
             for iBitmapBlockNum in range(groupDescriptor.inodeBitMapLoc, groupDescriptor.inodeBitMapLoc + ceil(inodesPerGroup / (blockSize * 8))):
                 blockTypeMap.update({iBitmapBlockNum:"iBitmapBlock"})
 
-            # block group descriptors start at block 1 and go to block ((numBlocks / BlocksPerGroup) / (BlockSize / GroupDescriptorSize))
             if descriptorNumInBlock == 1:
                 blockTypeMap.update({descriptorBlockNum:"GroupDescriptorBlock"})
 
-
             elif descriptorNumInBlock == numDescriptorsPerBlock:
                 descriptorBlockNum += 1
-            descriptorNumInBlock = (descriptorNumInBlock % numDescriptorsPerBlock) + 1
 
+            descriptorNumInBlock = (descriptorNumInBlock % numDescriptorsPerBlock) + 1
 
         return blockTypeMap
 
@@ -209,22 +191,21 @@ class ReadJournal:
 
         Returns
         -------
-        Explicit:
-        data : bytes
-            The bytes contained on the journal block which was read.
-
-        Implicit:
-        None
+            data : bytes
+                The bytes contained on the journal block which was read.
         """
 
         superBlock = super_block.SuperBlock(self.diskO)
         fileSystemJournalInode = read_inode.Inode(self.diskO, superBlock.journalInode, superBlock, False, True)
 
-        journalBlockNum = journalBlockNum % ((fileSystemJournalInode.entries[-1].fileBlockNum + fileSystemJournalInode.entries[-1].numBlocks) - 1)
+        # (fileSystemJournalInode.entries[-1].fileBlockNum + fileSystemJournalInode.entries[-1].numBlocks) - 1 is the 
+        # last block number in the journal. journalBlockNum is modded with it in order to allow wraparound
+        # to the beginning of the journal, incase the journal has wrapped around.
+        journalBlockNum = (journalBlockNum % 
+            ((fileSystemJournalInode.entries[-1].fileBlockNum + fileSystemJournalInode.entries[-1].numBlocks) - 1))
 
         if journalBlockNum == 0:
             journalBlockNum = fileSystemJournalInode.entries[-1].fileBlockNum + fileSystemJournalInode.entries[-1].numBlocks
-
 
         blockEntry = ()
         for entry in fileSystemJournalInode.entries:

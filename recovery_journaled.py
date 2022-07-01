@@ -27,7 +27,6 @@ class FileRecoveryJournaled:
     """
 
 
-    #TODO: this method is a bit messy, maybe split into more functions?
     def recoverFiles(self, diskO: disks.Disk, transactions: list, deletedInodes: list, numToRecover: int, outputPath: str):
 
         """
@@ -75,6 +74,7 @@ class FileRecoveryJournaled:
 
                 journalBlockNum = transaction.journalBlockNum + 1
 
+                # This flag is set to true when the file is recovered, indicating that the nested loops should be broken out of.
                 breakFlag = False
                 for dataBlock in transaction.dataBlocks:
 
@@ -87,7 +87,8 @@ class FileRecoveryJournaled:
 
                             numRecovered += 1
 
-                            recoveredFile = open("%s/recoveredFile_%s" % (outputPath, (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(deletedInode[2])) + f"_num_{numRecovered}")), "ab")
+                            recoveredFile = (open("%s/recoveredFile_%s" % (outputPath, 
+                            (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(deletedInode[2])) + f"_num_{numRecovered}")), "ab"))
 
                             for entry in inode.entries:
                                 disk = open(diskO.diskPath, "rb")
@@ -154,7 +155,6 @@ class FileRecoveryJournaled:
                     blockData = readJournal.readJournalBlock(transaction.journalBlockNum + blockBuffer)
 
                     for inode in self.readInodeTableBlock(diskO, blockData, block[0], superBlock):
-                        # gather data to make this number make more sense. average difference + 1 standard deviation
                         if transaction.commitTime - inode[2] < 12:
                             deletedInodes.append(inode)
 
@@ -202,7 +202,6 @@ class FileRecoveryJournaled:
         for inodeNum in range(0, numInodesInBlock):
 
             inode = read_inode.Inode(diskO, inodeNum, superBlock, block, False)
-
 
             if inode.deletionTime > 0 and not inode.hasBlockPointers:
                 # each deleted inode is represented as a tuple(inode table block num, inode number within the table block starting at 0, inode deletion time)

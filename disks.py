@@ -55,9 +55,11 @@ def getDisks() -> list:
     goodDisks: list[Disk] = []
 
     for disk in disks:
+        # The different data fields in /proc/mounts are seperated by " " or ","
         disk: str = re.split(" |,", disk)
 
         if disk[0][0:4] == "/dev" and (disk[2] == "ext4" or disk[2] == "ext3" or disk[2] == "ext2") and disk[3] == "rw":
             goodDisks.append(Disk(disk[0], disk[2]))
 
     return goodDisks
+

@@ -3,7 +3,6 @@
 import time
 
 import decode
-import disks
 import super_block
 
 
@@ -18,14 +17,17 @@ class JournalSuperBlock:
         The size of blocks within the journal
     hasCSumv3 : bool
         Indicates whether the journal has the JBD2_FEATURE_INCOMPAT_CSUM_V3 feature
-        The structure of block tags is determined by this feature
+        The structure of block tags is determined by the presence of this feature.
     """
 
     def __init__(self, data: bytes):
         decoder = decode.Decoder()
 
         self.blockSize: int = decoder.beBytesToDecimal(data, 12, 15)
-        self.hasCSumV3: bool = data[0x2B] & 0b00010000 == 16
+
+        # The JBD2_FEATURE_INCOMPAT_CSUM_V3 feature flag is set in 
+        # the fourth bit of byte 43 in the journal super block
+        self.hasCSumV3: bool = data[43] & 0b00010000 == 16
 
 
 class Transaction:
@@ -62,7 +64,8 @@ class Transaction:
 
     """
 
-    def __init__(self, descriptorData: bytes, journalBlockNum: int, blockTypeMap: dict, diskO: disks.Disk, journalSuperBlock: JournalSuperBlock, superBlock: super_block.SuperBlock):
+    def __init__(self, descriptorData: bytes, journalBlockNum: int, blockTypeMap: dict,
+    journalSuperBlock: JournalSuperBlock, superBlock: super_block.SuperBlock):
 
         """
         Parameters
@@ -75,8 +78,6 @@ class Transaction:
         blockTypeMap : dict
             The dictionary which has block numbers associated with metadata block type
             Used to map blocks in the transaction to block types in order to identify the transaction type
-        diskO : disks.Disk
-            The disk object associated with the filesystem
         journalSuperBlock : JournalSuperBlock
             The super block associated with the journal
         superBlock : super_block.SuperBlock
@@ -87,12 +88,9 @@ class Transaction:
 
         # initialize transaction data fields
         self.transactionNum: int = decoder.beBytesToDecimal(descriptorData, 8, 11)
-        # this is the journal block num of the descriptor block
         self.journalBlockNum: int = journalBlockNum
         self.commitTime: int = 0
-        
         self.dataBlocks: list = self.getBlocks(blockTypeMap, descriptorData[12:], journalSuperBlock, superBlock)
-
         # Transaction type 0 is deletion, 1 is useful, 2 is not useful
         self.transactionType = self.getTransactionType(self.dataBlocks)
 
@@ -120,25 +118,27 @@ class Transaction:
 
         transactionType: int = 2
 
-        # determine the transaction type
         blockTypesInOrder: list = []
-        numITableBlock = 0
+        numITableBlocks = 0
+
         for block in dataBlocks:
             if block[1] == "iTableBlock":
-                numITableBlock += 1
+                numITableBlocks += 1
             blockTypesInOrder.append(block[1])
 
         if blockTypesInOrder[0:3] == ["unknownBlock", "iTableBlock", "unknownBlock"]:
             transactionType = 0
-        elif numITableBlock > 1 and (blockTypesInOrder[0] == "unknownBlock" or blockTypesInOrder[0] == "iTableBlock") and "dBitmapBlock" in blockTypesInOrder:
+        elif (numITableBlocks > 1 and (blockTypesInOrder[0] == "unknownBlock" or blockTypesInOrder[0] == "iTableBlock") 
+        and "dBitmapBlock" in blockTypesInOrder):
             transactionType = 0
-        elif numITableBlock > 0:
+        elif numITableBlocks > 0:
             transactionType = 1
 
         return transactionType
     
 
-    def getBlocks(self, blockTypeMap: dict, data: bytes, journalSuperBlock: JournalSuperBlock, superBlock: super_block.SuperBlock) -> list:
+    def getBlocks(self, blockTypeMap: dict, data: bytes, 
+    journalSuperBlock: JournalSuperBlock, superBlock: super_block.SuperBlock) -> list:
 
         """
         gets a list of all the blocks, stored as a tuple (blockNum, blockType)
@@ -166,6 +166,8 @@ class Transaction:
 
         blocks: list = []
 
+        # The size (in bytes) of each block tag in the descriptor block depends on
+        # the journal JBD2_FEATURE_INCOMPAT_CSUM_V3 feature flag and the file system 64bit feature flag.
         if journalSuperBlock.hasCSumV3:
             modifier: int = 32
         elif not journalSuperBlock.hasCSumV3 and not superBlock.bit64:
@@ -176,8 +178,12 @@ class Transaction:
         offSet: int = 0
         while True:
 
+            # When the file system has the 64bit feature flag set, the block number
+            # in the descriptor block is spread across t_blocknr, and t_blocknr_high.
+            # Otherwise, it is simply in t_blocknr.
             if superBlock.bit64:
-                blockNum: int = decoder.beBytesToDecimal(data, offSet, offSet + 3) + (decoder.beBytesToDecimal(data, offSet + 8, offSet + 11) * pow(2, 32))
+                blockNum: int = (decoder.beBytesToDecimal(data, offSet, offSet + 3) + 
+                (decoder.beBytesToDecimal(data, offSet + 8, offSet + 11) * pow(2, 32)))
             else:
                 blockNum: int = decoder.beBytesToDecimal(data, offSet, offSet + 3)
 
@@ -195,6 +201,8 @@ class Transaction:
 
             offSet += modifier
 
+            # If the UUID flag is set, then the UUID in this block tag is the same as previos. 
+            # This reduces the size of the block tag by 16 bytes.
             if UUIDFlag:
                 offSet -= 16
 

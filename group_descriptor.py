@@ -8,7 +8,7 @@ import super_block
 class GroupDescriptor:
 
     """
-    Contains data associated with a group descriptor.
+    Contains data associated with a group descriptor. Represents struct ext4_group_desc
 
     Attributes
     ----------
@@ -36,8 +36,9 @@ class GroupDescriptor:
             The super block associated with the filesystem
             This is necessary to locate the location of the group descriptor on disk
         """
-
+        # A byte offset from the start of disk to the first block (in group 1) containing group descriptors.
         groupDescriptorTableOffSet = (superBlock.blockSize * (superBlock.blocksPerGroup + 1))
+
         groupOffSet = groupNum * superBlock.groupDescriptorSize
 
         disk = open(diskO.diskPath, "rb")
@@ -46,14 +47,15 @@ class GroupDescriptor:
 
         decoder = decode.Decoder()
 
+        # set group descriptor data fields.
 
-        # set group descriptor data fields
-
-        if diskO.diskType == "ext4":
+        # In ext4, there are two fields for each of these values, lower order and higher order bytes.
+        if diskO.diskType == "ext4":     
             self.inodeTableLoc: int = decoder.leBytesToDecimalLowerAndUpper(data, 8, 11, 40, 43)
             self.inodeBitMapLoc: int = decoder.leBytesToDecimalLowerAndUpper(data, 4, 7, 36, 39)
             self.blockBitMapLoc: int = decoder.leBytesToDecimalLowerAndUpper(data, 0, 3, 32, 35)
             
+        # In ext2/3, there is only one field for each of these values
         elif diskO.diskType == "ext3" or diskO.diskType == "ext2":
             self.inodeTableLoc: int = decoder.leBytesToDecimal(data, 8, 11)
             self.inodeBitMapLoc: int = decoder.leBytesToDecimal(data, 4, 7)

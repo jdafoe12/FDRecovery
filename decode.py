@@ -36,20 +36,16 @@ class Decoder:
 
         Returns
         -------
-        Explicit:
         num : int
             The decimal form of the little endian bytes which were converted.
-
-        Implicit:
-        None
         """
 
         num: int = 0
         count: int = 0
+
         for i in range(lower, upper + 1):
             if count > 0:
                 num += (data[i] * pow(16, count))
-
             else:
                 num += data[i]
 
@@ -80,13 +76,8 @@ class Decoder:
 
         Returns
         -------
-        Explicit:
         num : int
             The decimal form of the little endian bytes which were converted.
-
-        Implicit:
-        None
-
         """
         
         newBytes: bytearray = bytearray()
@@ -120,20 +111,16 @@ class Decoder:
 
         Returns
         -------
-        Explicit:
         num : int
             The decimal form of the big endian bytes which were converted.
-
-        Implicit:
-        None
         """
 
         num: int = 0
         count = (upper - lower) * 2
+        
         for i in range(lower, upper + 1):
             if count > 0:
                 num += (data[i] * pow(16, count))
-
             else:
                 num += data[i]
 

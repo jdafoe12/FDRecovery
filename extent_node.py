@@ -36,12 +36,12 @@ class ExtentNode:
         self.entries: list[ExtentEntry] = list()
         self.indices: list[ExtentIndex] = list()
 
-        # if node depth in the extent tree is > 0, the entries in this node are extent indices. For each entry I need to add an index entry
+        # if node depth in the extent tree is > 0, the entries in this node are struct ext4_extent_idx.
         if self.header.extentDepth > 0:
             for i in range(0, self.header.numEntriesInExtent):
                 self.indices.append(ExtentIndex(data[12 + (12 * i):(12 + (12 * i)) + 12]))
         
-        # if node depth in the extent tree is 0, the entries in this node are regular extent entries. For each entry I need to add a regular entry
+        # if node depth in the extent tree is 0, the entries in this node are struct ext4_extent.
         elif self.header.extentDepth == 0:
             for i in range(0, self.header.numEntriesInExtent):
                 self.entries.append(ExtentEntry(data[12 + (12 * i):(12 + (12 * i)) + 12]))
@@ -51,6 +51,7 @@ class ExtentHeader:
 
     """
     Contains data associated with extent node headers in the ext4 extent tree.
+    Represents struct ext4_extent_header.
 
     Attributes
     ----------
@@ -84,6 +85,7 @@ class ExtentEntry:
 
     """
     Contains data associated with an extent entry within an extent node in the ext4 extent tree.
+    Represents struct ext4_extent.
 
     Attributes
     ----------
@@ -115,11 +117,11 @@ class ExtentEntry:
         self.blockNum: int = decoder.leBytesToDecimalLowerAndUpper(data, 8, 11, 6, 7)
 
 
-
 class ExtentIndex:
 
     """
     Contains data associated with an extent index within an extent node in the ext4 extent tree.
+    Represents struct ext4_extent_idx
 
     Attributes
     ----------

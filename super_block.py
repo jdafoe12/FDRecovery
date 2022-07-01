@@ -38,23 +38,24 @@ class SuperBlock:
             The disk object associated with the filesystem
         """
 
-        # read the data
         disk = open(diskO.diskPath, "rb")
         disk.seek(1024)
         data = disk.read(1024)
         disk.close
 
-        # interpret the data
         decoder = decode.Decoder()
 
+        # ext3/4 Both have journals (therefore a journalInode field), and the 64bit feature flag 
+        # used when reading journal descriptor blocks.
         if diskO.diskType == "ext4" or diskO.diskType == "ext3":
             self.journalInode: int = decoder.leBytesToDecimal(data, 224, 227)
             self.bit64 = data[0x60] & 0b00010000 == 0b00010000
 
+        # ext4 has a group descriptor size specified in the super block.
         if diskO.diskType == "ext4":
             self.hasExtent = (data[0x60] & 0b00000010) == 0b00000010
             self.groupDescriptorSize: int = decoder.leBytesToDecimal(data, 254, 255)
-
+        # the group descriptor size for ext2 is always 32 bytes
         elif diskO.diskType == "ext3" or diskO.diskType == "ext2":
             self.groupDescriptorSize: int = 32
 
@@ -65,5 +66,9 @@ class SuperBlock:
         self.numBlocks: int = decoder.leBytesToDecimal(data, 4, 7)
         self.numInodes: int = decoder.leBytesToDecimal(data, 0, 3)
 
+        # 256 and 128 are the only possible inode sizes. 
+        # Sometimes, this field may not be set in the super block. In that case it is 128.
         if self.inodeSize != 256:
             self.inodeSize == 128
+
+        

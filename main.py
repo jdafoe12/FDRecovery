@@ -12,14 +12,12 @@ import recovery_no_journal
 import read_journal
 import disks
 
-#TODO: try as much as possible to isolate implicit outputs
+
 class App:
 
     """
     Initializes all GUI aspects
     and contains handlers for GUI events
-
-    ...
 
     Attributes
     ----------
@@ -105,7 +103,6 @@ class App:
         self.deletedInodes: list[tuple] = []
         self.deletedFiles: list[str] = []
 
-        # setup frame
         self.topFrame: tk.Frame = tk.Frame(master=master, height=50)
         self.topFrame.columnconfigure([0, 1, 2], weight=1)
         self.topFrame.rowconfigure([0, 1, 2, 3], weight=1)
@@ -116,12 +113,10 @@ class App:
         diskOptions: tk.OptionMenu = tk.OptionMenu(self.topFrame, diskVar, *allDisks, command=self.getDeletedFiles)
         diskOptions.grid(column=0, row=0, columnspan=2, sticky="w")
 
-        # Label, prompting user to choose files to recover.
         labelSelect: tk.Label = tk.Label(master=self.topFrame, anchor=tk.CENTER, text="Select Files to Recover:")
         labelSelect.grid(column=1, row=0, sticky="nsew")
 
-        # Setup 3 listBox with list of strings to show the deleted files
-        # so the user can select which ones to recover.
+        # 3 listBox with list of strings to show the deleted files
         self.selectDeletedFiles0: tk.Listbox = tk.Listbox(master=self.topFrame, exportselection=False, selectmode=tk.MULTIPLE, height=30)
         self.selectDeletedFiles1: tk.Listbox = tk.Listbox(master=self.topFrame, exportselection=False, selectmode=tk.MULTIPLE, height=30)
         self.selectDeletedFiles2: tk.Listbox = tk.Listbox(master=self.topFrame, exportselection=False, selectmode=tk.MULTIPLE, height=30)
@@ -129,7 +124,6 @@ class App:
         self.selectDeletedFiles1.grid(column=1, row=1, sticky="nesw")
         self.selectDeletedFiles2.grid(column=2, row=1, sticky="nesw")
 
-        # Button to select all deleted files for recovery
         selectAllButton: tk.Button = tk.Button(master=self.topFrame, text="Select/Deselect All", command=self.selectAll)
         selectAllButton.grid(column=2, row=0, sticky="e")
 
@@ -141,7 +135,6 @@ class App:
         self.outputDirectoryLabel: tk.Label = tk.Label(master=self.topFrame, text="Output dir: ")
         self.outputDirectoryLabel.grid(column=1, row=2, sticky = "w")
 
-        # Button to recover the files.
         recoveryButton: tk.Button = tk.Button(master=self.topFrame, text="Recover", command=self.recover)
         recoveryButton.grid(column=2, row=2, sticky="e")
 
@@ -179,20 +172,26 @@ class App:
         if self.currentDisk != disk:
             self.topFrame.config(cursor="exchange")
             self.topFrame.update_idletasks()
+
             self.currentDisk = disk
 
+            # ext3 and ext3 have journals, which are used for recovery
             if disk.diskType == "ext3" or disk.diskType == "ext4":
                 fileRecovery: recovery_journaled.FileRecoveryJournaled = recovery_journaled.FileRecoveryJournaled()
                 readJournal: read_journal.ReadJournal = read_journal.ReadJournal(self.currentDisk)
+
                 self.transactions = readJournal.readFileSystemJournal()
                 self.transactions.sort(key=lambda transaction: -transaction.transactionNum)
+
                 self.deletedInodes = fileRecovery.getDeletedInodes(self.currentDisk, self.transactions)
                 self.deletedFiles = []
                 for inode in self.deletedInodes:
                     self.deletedFiles.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(inode[2])) + f"_inode{inode[0]}_{inode[1]}")
 
+            # ext2 does not have a journal
             elif disk.diskType == "ext2":
                 fileRecovery: recovery_no_journal.FileRecoveryNoJournal = recovery_no_journal.FileRecoveryNoJournal()
+
                 self.deletedInodes = fileRecovery.getDeletedInodes(self.currentDisk)
                 self.deletedFiles = []
                 for inode in self.deletedInodes:
@@ -201,6 +200,7 @@ class App:
             self.updateBoxes()
             self.topFrame.config(cursor="")
             self.topFrame.update_idletasks()
+
         else:
             return
 
@@ -257,7 +257,27 @@ class App:
         self.outputDirectoryLabel.config(text=f"Output dir: {self.outputDirectory}")
 
     def selectAll(self):
-        if len(self.selectDeletedFiles0.curselection()) > 0 or len(self.selectDeletedFiles1.curselection()) > 0 or len(self.selectDeletedFiles2.curselection()) > 0:
+
+        """
+        Called when selectAll button is pushed.
+        When there are no files selected, this function selects all files.
+        When there are files selected, this function deselects all files.
+
+        Returns
+        -------
+        Explicit:
+        None
+
+        Implicit:
+        selectDeletedFiles0 : tk.ListBox
+            Either selects all items, or deselects all items.
+        selectDeletedFiles1 : tk.ListBox
+            Either selects all items, or deselects all items.
+        selectDeletedFiles2 : tk.ListBox
+            Either selects all items, or deselects all items.
+        """
+        if (len(self.selectDeletedFiles0.curselection()) > 0 or len(self.selectDeletedFiles1.curselection()) > 0
+        or len(self.selectDeletedFiles2.curselection()) > 0):
             self.selectDeletedFiles0.selection_clear(0, END)
             self.selectDeletedFiles1.selection_clear(0, END)
             self.selectDeletedFiles2.selection_clear(0, END)
@@ -320,3 +340,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
