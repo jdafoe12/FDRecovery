@@ -17,24 +17,48 @@ def getReadableJournalCopy():
         print(disk.diskPath, end=" ")
     print("\n")
 
-    diskName = input("Choose disk to get copy of journal from: ")
+    while True:
+        try:
+            diskName = input("Choose disk to get copy of journal from: ")
 
-    for disk in diskList:
-        if diskName == disk.diskPath:
-            currentDisk = disk
+            for disk in diskList:
+                if diskName == disk.diskPath:
+                    currentDisk = disk
 
-    numCopies = int(input("Number of copies: "))
+            superBlock = super_block.SuperBlock(currentDisk)
+            break
+        except UnboundLocalError:
+            print("Invalid disk path, try again.")
+
+    while True:
+        try:
+            numCopies = int(input("Number of copies: "))
+            break
+        except ValueError:
+            print("Invalid input, please enter an integer value")
 
     timeDelayInSeconds = 0
 
     if numCopies > 1:
-        timeDelayInSeconds = int(input("Time delay between copies (in seconds)? "))
+        
+        while True:
+            try: 
+                timeDelayInSeconds = int(input("Time delay between copies (in seconds)? "))
+                break
+            except ValueError:
+                print("invalid input, please enter an integer value")
 
     outputPath = input("Output path: ")
 
     for journalNum in range(0, numCopies):
 
-        journal = open(f"{outputPath}/fileSystemJournal{journalNum}.txt", "w")
+        while True:
+            try:
+                journal = open(f"{outputPath}/fileSystemJournal{journalNum}.txt", "w")
+                break
+            except FileNotFoundError:
+                print("Invalid output path, try again")
+                outputPath = input("Output path: ")
 
         # flush filesystem cache
         os.sync()
@@ -42,7 +66,6 @@ def getReadableJournalCopy():
         drop_caches.write("3")
         drop_caches.close()
         
-        superBlock = super_block.SuperBlock(currentDisk)
         fileSystemJournalInode = read_inode.Inode(currentDisk, superBlock.journalInode, superBlock, False, True)
 
         for entry in fileSystemJournalInode.entries:
