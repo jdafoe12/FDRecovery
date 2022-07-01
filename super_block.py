@@ -6,27 +6,28 @@ import disks
 class SuperBlock:
 
     """
-    Contains data associated with the super block for the filesystem
+    Contains data associated with the super block for the filesystem.
+    Represents struct super_block
 
     Attributes
     ----------
     inodeSize : int
-        The size in bytes of the inode metadata structure in the filesystem
+        The size in bytes of the inode metadata structure in the filesystem.
     inodesPerGroup : int
-        The number of inodes per group in the filesystem
+        The number of inodes per group in the filesystem.
     blocksPerGroup : int
-        The number of blocks per group in the filesystem
+        The number of blocks per group in the filesystem.
     blockSize : int
-        The size in bytes of blocks in the filesystem
+        The size in bytes of blocks in the filesystem.
     numBlocks : int
-        The number of blocks in the filesystem
+        The number of blocks in the filesystem.
     numInodes : int
-        The number of inodes in the filesystem
+        The number of inodes in the filesystem.
     hasExtent : boolean
         If the filesystem type is ext4, the extent feature needs to be checked
-        to understand whether to read extents or block pointers
+        to understand whether to read extents or block pointers.
     bit64 : boolean
-        Indicates whether the 64bit flag is set
+        Indicates whether the 64bit flag is set.
     """
 
     def __init__(self, diskO: disks.Disk):
@@ -35,7 +36,7 @@ class SuperBlock:
         Parameters
         ----------
         diskO : disks.Disk
-            The disk object associated with the filesystem
+            The disk object associated with the filesystem.
         """
 
         disk = open(diskO.diskPath, "rb")
@@ -45,7 +46,7 @@ class SuperBlock:
 
         decoder = decode.Decoder()
 
-        # ext3/4 Both have journals (therefore a journalInode field), and the 64bit feature flag 
+        # ext3/4 Both have journals (therefore a journalInode field), and the 64bit feature flag .
         # used when reading journal descriptor blocks.
         if diskO.diskType == "ext4" or diskO.diskType == "ext3":
             self.journalInode: int = decoder.leBytesToDecimal(data, 224, 227)
@@ -55,7 +56,7 @@ class SuperBlock:
         if diskO.diskType == "ext4":
             self.hasExtent = (data[0x60] & 0b00000010) == 0b00000010
             self.groupDescriptorSize: int = decoder.leBytesToDecimal(data, 254, 255)
-        # the group descriptor size for ext2 is always 32 bytes
+        # the group descriptor size for ext2 is always 32 bytes.
         elif diskO.diskType == "ext3" or diskO.diskType == "ext2":
             self.groupDescriptorSize: int = 32
 

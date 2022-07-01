@@ -8,7 +8,7 @@ import super_block
 class GroupDescriptor:
 
     """
-    Contains data associated with a group descriptor. Represents struct ext4_group_desc
+    Contains data associated with a group descriptor. Represents struct group_desc
 
     Attributes
     ----------
