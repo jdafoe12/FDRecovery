@@ -7,7 +7,7 @@ class Disk:
         self.diskType = diskType
 
 
-def getDisks(self)-> list:
+def getDisks()-> list:
 
     disks = []
 
@@ -15,6 +15,6 @@ def getDisks(self)-> list:
     drives = ["%s" % d for d in dl if os.path.exists("%s:" % d)]
 
     for drive in drives:
-        disks.append(Disk("\\\\.\\" + drive, "ntfs"))
+        disks.append(Disk("\\\\.\\" + drive + ":", "ntfs"))
     
     return disks
