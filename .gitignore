@@ -1,2 +1,16 @@
 /.vscode
+
 /__pycache__
+
+/common/__pycache__
+
+/NTFS/__pycache__
+/NTFS/MFT/__pycache__
+/NTFS/recovery/__pycache__
+/NTFS/structures/__pycache__
+
+/EXT/journal/__pycache__
+/EXT/recovery/__pycache__
+/EXT/scripts/__pycache__
+/EXT/structures/__pycache__
+/EXT/__pycache__
