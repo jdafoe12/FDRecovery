@@ -1,8 +1,4 @@
 
-import sys
-
-sys.path.insert(0, "C:/Users/jwdaf/Data_Recovery/DataRecovery/Common")
-
 
 from src.NTFS import structures
 from src.NTFS import MFT
