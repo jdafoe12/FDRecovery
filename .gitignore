@@ -2,15 +2,22 @@
 
 /__pycache__
 
-/common/__pycache__
+/src/__pycache__
 
-/NTFS/__pycache__
-/NTFS/MFT/__pycache__
-/NTFS/recovery/__pycache__
-/NTFS/structures/__pycache__
+/src/common/__pycache__
 
-/EXT/journal/__pycache__
-/EXT/recovery/__pycache__
-/EXT/scripts/__pycache__
-/EXT/structures/__pycache__
-/EXT/__pycache__
+/src/NTFS/__pycache__
+/src/NTFS/MFT/__pycache__
+/src/NTFS/recovery/__pycache__
+/src/NTFS/structures/__pycache__
+
+/src/EXT/journal/__pycache__
+/src/EXT/recovery/__pycache__
+/src/EXT/scripts/__pycache__
+/src/EXT/structures/__pycache__
+/src/EXT/__pycache__
+
+/src/FAT/directory_tree/__pycache__
+/src/FAT/recovery/__pycache__
+/src/FAT/structures/__pycache__
+/src/FAT/__pycache__
