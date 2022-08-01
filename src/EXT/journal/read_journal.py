@@ -49,12 +49,8 @@ class ReadJournal:
 
         Returns
         -------
-        Explicit:
         transactionList : list[journal.Transaction]
             A list of the transactions in the journal represented as journal.Transaction objects.
-
-        Implicit:
-        None
         """
 
         # Flush filesystem cache.
@@ -97,7 +93,7 @@ class ReadJournal:
                     if deleteLast or not hasCommitBlock:
                         transactionList.pop()
                         deleteLast = False
-                    
+
                     hasCommitBlock = False
 
                     transactionList.append(journal.Transaction(block, journalBlockNum, blockTypeMap, journalSuperBlock, superBlock))
@@ -195,10 +191,10 @@ class ReadJournal:
         superBlock = structures.super_block.SuperBlock(self.diskO)
         fileSystemJournalInode = structures.read_inode.Inode(self.diskO, superBlock.journalInode, superBlock, False, True)
 
-        # (fileSystemJournalInode.entries[-1].fileBlockNum + fileSystemJournalInode.entries[-1].numBlocks) - 1 is the 
+        # (fileSystemJournalInode.entries[-1].fileBlockNum + fileSystemJournalInode.entries[-1].numBlocks) - 1 is the
         # last block number in the journal. journalBlockNum is modded with it in order to allow wraparound
         # to the beginning of the journal, incase the journal has wrapped around.
-        journalBlockNum = (journalBlockNum % 
+        journalBlockNum = (journalBlockNum %
             ((fileSystemJournalInode.entries[-1].fileBlockNum + fileSystemJournalInode.entries[-1].numBlocks) - 1))
 
         if journalBlockNum == 0:
@@ -217,4 +213,3 @@ class ReadJournal:
         disk.close()
 
         return data
-

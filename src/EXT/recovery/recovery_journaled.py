@@ -53,7 +53,7 @@ class FileRecoveryJournaled:
             The number of successfully recovered files.
 
         Implicit:
-        Writes recovered files to outputPath/recoveredFile_%s.
+            Writes recovered files to outputPath/recoveredFile_%s.
         """
 
         superBlock: structures.super_block.SuperBlock = structures.super_block.SuperBlock(diskO)
@@ -85,7 +85,7 @@ class FileRecoveryJournaled:
 
                             numRecovered += 1
 
-                            recoveredFile = (open("%s/recoveredFile_%s" % (outputPath, 
+                            recoveredFile = (open("%s/recoveredFile_%s" % (outputPath,
                             (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(deletedInode[2])) + f"_num_{numRecovered}")), "ab"))
 
                             for entry in inode.entries:
@@ -94,7 +94,7 @@ class FileRecoveryJournaled:
 
                                 for i in range(0, entry.numBlocks):
                                     recoveredFile.write(disk.read(superBlock.blockSize))
-                                
+
                                 disk.close
                             recoveredFile.close
 
@@ -122,14 +122,10 @@ class FileRecoveryJournaled:
 
         Returns
         -------
-        Explicit:
         deletedInodes : list[tuple]
             List of the deleted inodes in journal deletion transactions.
             inodes in this case are stored as a tuple of the form
             (block num of inode table, offset within inode table, deletion time).
-
-        Implicit:
-        None
         """
 
         superBlock = structures.super_block.SuperBlock(diskO)
@@ -183,14 +179,10 @@ class FileRecoveryJournaled:
 
         Returns
         -------
-        Explicit:
         deletedInodes : list[tuple]
             List of all deleted inodes in this inode table block.
              inodes in this case are stored as a tuple of the form
             (block num of inode table, offset within inode table, deletion time).
-
-        Implicit:
-        None
         """
 
         deletedInodes: list = []
@@ -206,4 +198,3 @@ class FileRecoveryJournaled:
                 deletedInodes.append((blockNum, inodeNum, inode.deletionTime))
 
         return deletedInodes
-        

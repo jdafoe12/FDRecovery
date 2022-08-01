@@ -52,7 +52,7 @@ class FileRecoveryNoJournal:
             The number of successfully recovered files.
 
         Implicit:
-        Writes recovered files to outputPath/recoveredFile_%s.
+            Writes recovered files to outputPath/recoveredFile_%s.
         """
 
         superBlock = structures.super_block.SuperBlock(diskO)
@@ -74,7 +74,7 @@ class FileRecoveryNoJournal:
 
                 for i in range(0, entry.numBlocks):
                     recoveredFile.write(disk.read(superBlock.blockSize))
-                                
+
                 disk.close
             recoveredFile.close
 
@@ -93,14 +93,10 @@ class FileRecoveryNoJournal:
 
         Returns
         -------
-        Explicit:
         DeletedInodes : list[tuple]
             List of the inodes which the user selected for recovery.
             inodes in this case are stored as a tuple of the form
             (inode num, inode deletion time).
-
-        Implicit:
-        None
         """
 
         # flush filesystem cache
@@ -132,7 +128,7 @@ class FileRecoveryNoJournal:
                     deletedInodes.append((inodeNum, inode.deletionTime))
                 elif inode.deletionTime == 0:
                     break
-        
+
         deletedInodes.sort(key=lambda inode: -inode[1])
 
         return deletedInodes
@@ -152,12 +148,8 @@ class FileRecoveryNoJournal:
 
         Returns
         -------
-        Explicit:
         iBitmaps : list[tuple[int, int]]
             A list of inode bitmaps which are of the form tuple(iBitmapBlockNum, descriptorNum).
-
-        Implicit:
-        None
         """
         blockSize = superBlock.blockSize
         blocksPerGroup = superBlock.blocksPerGroup
@@ -171,7 +163,7 @@ class FileRecoveryNoJournal:
 
             for iBitmapBlockNum in range(groupDescriptor.inodeBitMapLoc, groupDescriptor.inodeBitMapLoc + ceil(inodesPerGroup / (blockSize * 8))):
                 iBitmaps.append((iBitmapBlockNum, descriptorNum))
-        
+
         return iBitmaps
 
 
@@ -193,16 +185,11 @@ class FileRecoveryNoJournal:
 
         Returns
         -------
-        Explicit:
-            holeInodes : list[list | int]
-                The inode numbers which are free and surrounded by used inodes.
-                These inodes are likely to be associated with deleted files.
-                holeInodes[0] contains a list of Inodes which are likely associated with deleted files.
-                holeInodes[1] contains the inode number directly following the last used inode.
-
-
-        Implicit:
-        None
+        holeInodes : list[list | int]
+            The inode numbers which are free and surrounded by used inodes.
+            These inodes are likely to be associated with deleted files.
+            holeInodes[0] contains a list of Inodes which are likely associated with deleted files.
+            holeInodes[1] contains the inode number directly following the last used inode.
         """
 
         # Note that inode numbers start at 1

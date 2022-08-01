@@ -58,7 +58,7 @@ class Inode:
         readPointers : bool
             A boolean value indicating whether the block pointers should be read
         """
-        
+
         # if blockData is false, read from disk. inodeNum will be the inode number of the inode.
         if type(blockData) is bool:
 
@@ -91,7 +91,7 @@ class Inode:
         self.deletionTime: int = decoder.leBytesToDecimal(inodeData, 20, 23)
 
         if diskO.diskType == "ext4":
-            # 0xF30A (62218) is the magic number indicating an ext4 extent node. 
+            # 0xF30A (62218) is the magic number indicating an ext4 extent node.
             # If the following bytes are not empty, then there are block pointers.
             self.hasBlockPointers = ((decoder.leBytesToDecimal(inodeData, 40, 41) == 62218)
             and (decoder.leBytesToDecimal(inodeData, 42, 43) > 0))
@@ -152,7 +152,7 @@ class Inode:
                     nodeData = disk.read(superBlock.blockSize)
                     disk.close
                     nodes.append(structures.extent_node.ExtentNode(nodeData))
-            
+
             else:
                 entries.extend(currentNode.entries)
 
@@ -213,14 +213,10 @@ class Inode:
 
         Returns
         -------
-        Explicit:
         pointers : list[int]
             A list containing block numbers of the pointers in data
-
-        Implicit:
-        None
         """
-        
+
         decoder: common.decode.Decoder = common.decode.Decoder
         pointers: list[int] = []
 
@@ -254,12 +250,8 @@ class Inode:
 
         Returns
         -------
-        Explicit:
         pointers : list[int]
             A list containing the pointers which were read
-
-        Implicit:
-        None
         """
 
         pointers: list[int] = self.readPointers(data)
@@ -272,7 +264,7 @@ class Inode:
                 indirectPointerData = disk.read(superBlock.blockSize)
                 disk.close
                 tempPointers.extend(self.readPointers(indirectPointerData))
-            
+
             pointers = tempPointers
             tempPointers = []
 
@@ -293,7 +285,7 @@ class Inode:
 
         Returns
         -------
-        Explicit:
+        entries
             List containing Entry objects, which are ranges of block numbers
             in which the data for the associated file is contained.
         """
@@ -342,5 +334,3 @@ class BlockPointerEntry:
         self.fileBlockNum = fileBlockNum
         self.numBlocks = numBlocks
         self.blockNum = blockNum
-
-    
