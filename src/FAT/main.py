@@ -70,9 +70,7 @@ class App:
             fileRecovery: recovery.recovery.Recovery = recovery.recovery.Recovery()
 
             bootSector = structures.boot_sector.BootSector(self.currentDisk)
-            print("SHEEEEEEEEEEESH")
             self.deletedEntrySets = fileRecovery.getDeletedFiles(self.currentDisk, bootSector)
-            print("SSSSSSSSSSSSSSSSSSSSSSHHHHHHHHHHHHHHHHEEEEEEEEEEEEEEEEESSSSSSSSSHHHHH")
             self.deletedFiles = []
             for set in self.deletedEntrySets:
                 self.deletedFiles.append(set.name)
