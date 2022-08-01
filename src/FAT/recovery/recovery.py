@@ -36,7 +36,6 @@ class Recovery:
         return len(deletedFiles)
 
     def getDeletedFiles(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector):
-        print(diskO.diskType)
         if diskO.diskType == "EXFA":
             return self.exFATGetDeleted(diskO, bootSector)
         elif diskO.diskType == "FAT32":
@@ -93,7 +92,6 @@ class Recovery:
 
 
     def exFATGetDeleted(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector):
-        print("SHEEEEEEEEEEEEEEEEEEEESH")
 
         bytesPerCluster = bootSector.bytesPerSector * bootSector.sectorsPerCluster
 

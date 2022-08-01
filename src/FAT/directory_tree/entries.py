@@ -41,7 +41,6 @@ class NameEntry:
 
 class FAT32Entry:
     def __init__(self, data: bytes):
-        print("entry")
         self.isLongName = data[0x0B] & 0b00001111 == 0b00001111
         self.name = ""
         if self.isLongName:
