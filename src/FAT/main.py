@@ -65,13 +65,14 @@ class App:
             self.topFrame.config(cursor="exchange")
             self.topFrame.update_idletasks()
 
-            self.currentDisk = disk
+            self.currentDisk: structures.disks.Disk = disk
 
             fileRecovery: recovery.recovery.Recovery = recovery.recovery.Recovery()
 
-            bootSector = structures.boot_sector.BootSector(self.currentDisk.diskName)
-
-            self.deletedEntrySets = fileRecovery.getDeletedFiles(self.currentDisk.diskName, bootSector)
+            bootSector = structures.boot_sector.BootSector(self.currentDisk)
+            print("SHEEEEEEEEEEESH")
+            self.deletedEntrySets = fileRecovery.getDeletedFiles(self.currentDisk, bootSector)
+            print("SSSSSSSSSSSSSSSSSSSSSSHHHHHHHHHHHHHHHHEEEEEEEEEEEEEEEEESSSSSSSSSHHHHH")
             self.deletedFiles = []
             for set in self.deletedEntrySets:
                 self.deletedFiles.append(set.name)
@@ -113,7 +114,7 @@ class App:
         for index in self.selectDeletedFiles2.curselection():
             toRecover.append(self.deletedEntrySets[(index) + ((len(self.deletedFiles) - ceil(len(self.deletedFiles) / 3)))])
 
-        self.numRecovered += fileRecovery.recoverFiles(self.currentDisk.diskName, toRecover, self.outputDirectory)
+        self.numRecovered += fileRecovery.recoverFiles(self.currentDisk, toRecover, self.outputDirectory)
 
 
         self.selectDeletedFiles0.selection_clear(0, END)

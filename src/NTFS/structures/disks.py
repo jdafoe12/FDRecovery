@@ -23,5 +23,11 @@ def getDisks()-> list:
         disk = open("\\\\.\\" + drive + ":", "rb")
         typeID = disk.read(7)
         disks.append(Disk("\\\\.\\" + drive + ":", typeID[3:7]))
+
+    i = 0
+    while len(disks) > i:
+        if disks[i].diskName != "NTFS":
+            disks.pop(i)
+        i += 1
     
     return disks
