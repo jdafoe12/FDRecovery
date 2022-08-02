@@ -3,7 +3,7 @@
 
 from src import common
 
-from src.EXT import structures
+from src.EXT.structures import disks
 
 
 class SuperBlock:
@@ -33,7 +33,7 @@ class SuperBlock:
         Indicates whether the 64bit flag is set.
     """
 
-    def __init__(self, diskO: structures.disks.Disk):
+    def __init__(self, diskO: disks.Disk):
 
         """
         Parameters
@@ -70,9 +70,7 @@ class SuperBlock:
         self.numBlocks: int = decoder.leBytesToDecimal(data, 4, 7)
         self.numInodes: int = decoder.leBytesToDecimal(data, 0, 3)
 
-        # 256 and 128 are the only possible inode sizes. 
+        # 256 and 128 are the only possible inode sizes.
         # Sometimes, this field may not be set in the super block. In that case it is 128.
         if self.inodeSize != 256:
             self.inodeSize == 128
-
-        

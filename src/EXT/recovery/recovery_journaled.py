@@ -2,7 +2,6 @@
 
 import time
 from math import floor
-import structures.disks
 
 from src.EXT import structures
 from src.EXT import journal
@@ -50,6 +49,7 @@ class FileRecoveryJournaled:
         -------
         Explicit:
         numRecovered : int
+
             The number of successfully recovered files.
 
         Implicit:
@@ -57,7 +57,7 @@ class FileRecoveryJournaled:
         """
 
         superBlock: structures.super_block.SuperBlock = structures.super_block.SuperBlock(diskO)
-        readJournal: structures.read_journal.ReadJournal = structures.read_journal.ReadJournal(diskO)
+        readJournal: journal.read_journal.ReadJournal = journal.read_journal.ReadJournal(diskO)
 
         toRecover: list[tuple] = deletedInodes[0:numToRecover]
 

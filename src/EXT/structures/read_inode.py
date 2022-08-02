@@ -1,7 +1,7 @@
 
 
 from src import common
-from src.EXT import structures
+from src.EXT.structures import super_block, disks, group_descriptor, extent_node
 
 
 class Inode:
@@ -34,7 +34,7 @@ class Inode:
     """
 
 
-    def __init__(self, diskO: structures.disks.Disk, inodeNum: int, superBlock: structures.super_block.SuperBlock, blockData, readPointers: bool):
+    def __init__(self, diskO: disks.Disk, inodeNum: int, superBlock: super_block.SuperBlock, blockData, readPointers: bool):
 
         """
         Reads and stores the necessary inode metadata
@@ -65,7 +65,7 @@ class Inode:
             # initialize data needed to read the inode from disk.
             groupNum: int = int(inodeNum / superBlock.inodesPerGroup)
 
-            groupDescriptor = structures.group_descriptor.GroupDescriptor(diskO, groupNum, superBlock)
+            groupDescriptor = group_descriptor.GroupDescriptor(diskO, groupNum, superBlock)
 
             inodeOffSet = ((inodeNum % superBlock.inodesPerGroup) - 1)
             inodesPerBlock = int(superBlock.blockSize / superBlock.inodeSize)
@@ -109,7 +109,7 @@ class Inode:
                 self.entries = self.readBlockPointers(diskO.diskPath, inodeData, superBlock)
 
 
-    def readExtentTree(self, diskPath: str, data: bytes, superBlock: structures.super_block.SuperBlock) -> list:
+    def readExtentTree(self, diskPath: str, data: bytes, superBlock: super_block.SuperBlock) -> list:
 
         """
          Reads the ext4 extent tree. An extent tree is a data structure containing block pointers.
@@ -136,9 +136,9 @@ class Inode:
         # nodes is treated as a queue in this algorithm
         nodes: list = []
 
-        nodes.append(structures.extent_node.ExtentNode(data[40:100]))
+        nodes.append(extent_node.ExtentNode(data[40:100]))
 
-        entries: list[structures.extent_node.ExtentEntry] = list()
+        entries: list[extent_node.ExtentEntry] = list()
 
 
         while len(nodes) != 0:
@@ -151,7 +151,7 @@ class Inode:
                     disk.seek(superBlock.blockSize * index.nextNodeBlockNum)
                     nodeData = disk.read(superBlock.blockSize)
                     disk.close
-                    nodes.append(structures.extent_node.ExtentNode(nodeData))
+                    nodes.append(extent_node.ExtentNode(nodeData))
 
             else:
                 entries.extend(currentNode.entries)
@@ -160,7 +160,7 @@ class Inode:
         return sorted(entries, key=lambda entry: entry.fileBlockNum)
 
 
-    def readBlockPointers(self, diskPath: str, data: bytes, superBlock: structures.super_block.SuperBlock) -> list:
+    def readBlockPointers(self, diskPath: str, data: bytes, superBlock: super_block.SuperBlock) -> list:
 
         """
         Reads the direct and indirect block pointers contained in ext3 and ext2 inodes.
@@ -230,7 +230,7 @@ class Inode:
         return pointers
 
 
-    def readIndirectPointers(self, diskPath: str, data: bytes, depth: int, superBlock: structures.super_block.SuperBlock) -> list:
+    def readIndirectPointers(self, diskPath: str, data: bytes, depth: int, superBlock: super_block.SuperBlock) -> list:
 
         """
         Reads indirect block pointers in the given byte list, to the specified depth.

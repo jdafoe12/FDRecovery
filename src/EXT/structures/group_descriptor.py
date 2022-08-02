@@ -1,7 +1,7 @@
 
 
 from src import common
-from src.EXT import structures
+from src.EXT.structures import disks, super_block
 
 
 class GroupDescriptor:
@@ -20,7 +20,7 @@ class GroupDescriptor:
     """
 
 
-    def __init__(self, diskO: structures.disks.Disk, groupNum: int, superBlock: structures.super_block.SuperBlock):
+    def __init__(self, diskO: disks.Disk, groupNum: int, superBlock: super_block.SuperBlock):
 
         """
         Parameters
@@ -49,14 +49,13 @@ class GroupDescriptor:
         # set group descriptor data fields.
 
         # In ext4, there are two fields for each of these values, lower order and higher order bytes.
-        if diskO.diskType == "ext4":     
+        if diskO.diskType == "ext4":
             self.inodeTableLoc: int = decoder.leBytesToDecimalLowerAndUpper(data, 8, 11, 40, 43)
             self.inodeBitMapLoc: int = decoder.leBytesToDecimalLowerAndUpper(data, 4, 7, 36, 39)
             self.blockBitMapLoc: int = decoder.leBytesToDecimalLowerAndUpper(data, 0, 3, 32, 35)
-            
+
         # In ext2/3, there is only one field for each of these values
         elif diskO.diskType == "ext3" or diskO.diskType == "ext2":
             self.inodeTableLoc: int = decoder.leBytesToDecimal(data, 8, 11)
             self.inodeBitMapLoc: int = decoder.leBytesToDecimal(data, 4, 7)
             self.blockBitMapLoc: int = decoder.leBytesToDecimal(data, 0, 3)
-

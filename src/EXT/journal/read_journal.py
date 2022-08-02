@@ -5,7 +5,7 @@ import os
 
 from src import common
 from src.EXT import structures
-from src.EXT import journal
+from src.EXT.journal import journal
 
 
 class ReadJournal:
