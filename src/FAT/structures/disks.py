@@ -4,7 +4,28 @@ import os.path
 
 class Disk:
 
-    def __init__(self, diskPath, diskType):
+    """
+    Contains data associated with a disk.
+    
+    Attributes
+    ----------
+    diskPath : str
+        The file path of the disk.
+    diskType : str
+        The disk type (ext4, ext3, ext2).
+    """
+
+    def __init__(self, diskPath: str, diskType: str):
+
+        """
+        Parameters
+        ----------
+        diskPath : str
+            The path of the disk
+        diskType : str
+            The filesystem type of the disk.
+        """
+
         self.diskPath = diskPath
         self.diskType = diskType
 
@@ -13,6 +34,15 @@ class Disk:
 
 
 def getDisks()-> list:
+
+    """
+    Gets all valid disks and puts them in a list.
+
+    Returns
+    -------
+    disks : list[Disk]
+        A list of all valid disks
+    """
 
     disks = []
 

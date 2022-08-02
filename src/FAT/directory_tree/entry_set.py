@@ -6,18 +6,55 @@ from src.FAT import directory_tree
 from src.FAT import structures
 
 class EntrySet:
-    
+
+    """
+    Reads the metadata in all of the directory entries associated with a file/dir's entry set in exFAT.
+
+    Attributes
+    ----------
+    fileDirEntr : directory_tree.entries.FileDirEntry
+        The first directory entry in the entry section.
+    streamExtEntries : list[directory_tree.entries.StreamExtEntry]
+        A list of all stream extesion entries in the entry section.
+    isInUse : bool
+        Indicates whether the file/directory is currently in use.
+        if it is not currently in use, it is assumed that is has been deleted.
+    name : str
+        The full file/dir name.
+    clustRuns : list[tuple]
+        A list of tuple (firstClustNum, runSize). There is only more than one tuple
+        in the list when the data is fragmented.
+
+    Methods
+    -------
+    getClustRuns(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector) -> list:
+        A helper function to __init__. It gets the clustRuns for the entry set.
+    getFatPointer(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector, clustNum) -> int
+        Reads the FAT entry for the given cluster, returning a pointer to the next cluster in the file/dir.
+    """
+
     def __init__(self, data: bytes, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector, readPointers: bool):
 
+        """
+        Parameters
+        ----------
+        data : bytes
+            The data associated with the entry set.
+        diskO : structures.disks.disk
+            The disk object associated with the disk containing the entry set.
+        bootSector : structures.boot_sector.BootSector
+            The boot sector object associated with the disk.
+        readPointers : bool
+            Indicates whether the data pointers to this file/dir should be read.
+        """
 
-
-        self.fileDirEntry = directory_tree.entries.FileDirEntry
+        self.fileDirEntry: directory_tree.entries.FileDirEntry = directory_tree.entries.FileDirEntry
         self.streamExtEntries = []
         nameEntries = []
 
         if data[0] == 0x85 or data[0] == 0x05:
             self.fileDirEntry = directory_tree.entries.FileDirEntry(data[0:32])
-            self.isInUse = self.fileDirEntry.isInUse
+            self.isInUse: bool = self.fileDirEntry.isInUse
 
             for i in range(32, (32 * self.fileDirEntry.numSeconds) + 1, 32):
                 if data[i] == 0xC0 or data[i] == 0x40:
@@ -27,7 +64,7 @@ class EntrySet:
                     if nameLen > 30:
                         nameEntries.append(directory_tree.entries.NameEntry(data[i: i + 32], 30))
                         nameLen -= 30
-                    else: 
+                    else:
                         nameEntries.append(directory_tree.entries.NameEntry(data[i: i + 32], nameLen))
 
             self.name = ""
@@ -45,12 +82,29 @@ class EntrySet:
         else:
             return
 
-    def getClustRuns(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector):
-        
+    def getClustRuns(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector) -> list:
+
+        """
+        A helper function to __init__. It gets the clustRuns for the entry set.
+
+        Parameters
+        ----------
+        diskO : structures.disks.disk
+            The disk object associated with the disk containing the entry set.
+        bootSector : structures.boot_sector.BootSector
+            The boot sector object associated with the disk.
+
+        Returns
+        -------
+        clustRuns : list[tuple]
+            A list of tuple (firstClustNum, runSize). There is only more than one tuple
+            in the list when the data is fragmented.
+        """
+
         clustRuns = []
 
         for streamExt in self.streamExtEntries:
-            
+
             if not streamExt.hasFatChain:
                 clustRuns.append((streamExt.firstCluster, streamExt.dataLen))
 
@@ -70,14 +124,32 @@ class EntrySet:
                     while currentClust == prevClust + 1:
                         runSize += clusterSize
                         prevClust = currentClust
-                        # Note: it seems kinda inneficient to do this one pointer at a time.
+                        # Note: it seems inneficient to do this one pointer at a time.
                         currentClust = self.getFatPointer(diskO.diskPath, bootSector, currentClust)
 
                 clustRuns.append((firstRunClust, runSize))
 
         return clustRuns
 
-    def getFatPointer(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector, clustNum):
+    def getFatPointer(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector, clustNum: int) -> int:
+
+        """
+        Reads the FAT entry for the given cluster, returning a pointer to the next cluster in the file/dir
+
+        Parameters
+        ----------
+        diskO : structures.disks.disk
+            The disk object associated with the disk containing the FAT.
+        bootSector : structures.boot_sector.BootSector
+            The boot sector object associated with the disk.
+        clusNum : int
+            The cluster number to look at in the FAT.
+
+        Returns
+        -------
+        pointer : int
+            A refernce to the next cluster number in the file/dir.
+        """
 
         decoder = common.decode.Decoder
 
@@ -94,14 +166,42 @@ class EntrySet:
 
 
 class FAT32EntrySet:
+
+    """
+    Reads the metadata in all of the directory entries associated with a file/dir's entry set in FAT32Entry.
+
+    Attributes
+    ----------
+    startingClust : int
+        The starting cluster number of the associated file/dir.
+    dataLen : int
+        The length in bytes of the associated file/dir.
+    name : str
+        The name associated with the file/dir.
+    """
+
     def __init__(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector, dirSet: list):
+        """
+        Parameters
+        ----------
+        diskO : structures.disks.Disk
+            The disk object associated with the disk containing the entry set.
+            Not actually used by the method currently. May use when checkFull is ready.
+        bootSector : structures.boot_sector.BootSector
+            The boot sector object associated with the disk.
+            Not actually used by the method currently. May use when checkFull is ready.
+        dirSet : stack
+            A stack containing the entries for the file/dir in order.
+            Used to construct the full entry set.
+        """
+
         # dirSet is a stack. On top is shortName, followed by whatever longName it has
         startLen = len(dirSet)
         entry: directory_tree.entries.FAT32Entry = dirSet.pop()
-        self.startingClust = entry.startingClust
-        self.dataLen = entry.dataLen
+        self.startingClust: int = entry.startingClust
+        self.dataLen: int = entry.dataLen
         tempName = entry.name
-        self.name = ""
+        self.name: str = ""
 
         while len(dirSet) > 0:
             if len(dirSet) == startLen - 1:
@@ -127,7 +227,7 @@ class FAT32EntrySet:
 
     #     disk = open(diskO.diskPath, "rb")
     #     # I have stumbled upon a very interesting phenomena. it seems to be the case that
-    #     # I cannot seek into anything before the first cluster in the data section. 
+    #     # I cannot seek into anything before the first cluster in the data section.
     #     # this read will still provide the desired offset.
     #     disk.read(fatOffset + clustOffset)
 
@@ -139,7 +239,3 @@ class FAT32EntrySet:
     #         else:
     #             disk.close
     #             return True
-
-
-        
-

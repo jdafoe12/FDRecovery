@@ -5,8 +5,40 @@ from src.FAT import directory_tree
 import os
 
 class Recovery:
-    def recoverFiles(self, diskO: structures.disks.Disk, deletedFiles, outputDir):
-        #FAT32 files have attr name, firstClust, dataLen, isFull
+
+    """
+    Contains methods directly related to file recovery in FAT32 and exFAT filesystems.
+
+    Methods
+    -------
+    recoverFiles(self, diskO: structures.disks.Disk, deletedFiles, outputDir) -> int
+        Attempts to recover the files that the user has selected.
+    getDeletedFiles(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector) -> list
+        Gets a list of all deleted files. calls specific getDeleted methods for the differnt filesystems.
+     FAT32GetDeleted(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector) -> list
+        Gets a list of all deleted files in a FAT32 filesystem.
+    exFATGetDeleted(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector) -> list
+        Gets a list of deleted files in a exFAT filesystem.
+    """
+
+    def recoverFiles(self, diskO: structures.disks.Disk, deletedFiles: list, outputDir: str) -> int:
+
+        """
+        Attempts to recover the files that the user has selected.
+
+        Parameters
+        ----------
+        diskO : structures.disks.disk
+            The disk object for the disk being used.
+        deletedFiles : list
+            A list of the user selected files to recover.
+        outputDir : str
+            The path of the output directory.
+
+        Recurns
+        -------
+        The number of recovered files.
+        """
 
         bootSector = structures.boot_sector.BootSector(diskO)
         bytesPerCluster = bootSector.bytesPerSector * bootSector.sectorsPerCluster
@@ -35,20 +67,51 @@ class Recovery:
 
         return len(deletedFiles)
 
-    def getDeletedFiles(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector):
+
+    def getDeletedFiles(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector) -> list:
+
+        """
+        Gets a list of all deleted files. calls specific getDeleted methods for the differnt filesystems.
+
+        Parameters
+        ----------
+        diskO : structures.disks.Disk
+            The disk object for the disk to recover from.
+        bootSector : strucures.boot_sector.BootSector
+            The boot sector objects associated with the disk.
+
+        Returns
+        -------
+        A list of the deleted files.
+        """
+
         if diskO.diskType == "EXFA":
             return self.exFATGetDeleted(diskO, bootSector)
         elif diskO.diskType == "FAT32":
             return self.FAT32GetDeleted(diskO, bootSector)
 
-    def FAT32GetDeleted(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector):
+    def FAT32GetDeleted(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector) -> list:
+
+        """
+        Gets a list of all deleted files in a FAT32 filesystem.
+
+        Parameters
+        ----------
+        diskO : structures.disks.Disk.
+            The disk object for the disk to recover from.
+        bootSector : strucures.boot_sector.BootSector
+            The boot sector objects associated with the disk.
+
+        Returns
+        -------
+        deletedFiles : list
+            A list of the deleted files.
+
+        """
+
         bytesPerCluster = bootSector.bytesPerSector * bootSector.sectorsPerCluster
-       
         firstClusterLoc = bootSector.bytesPerSector * (bootSector.reservedSectors + (bootSector.sectorsPerFAT * bootSector.numFATs))
-
         rootDirOffset = firstClusterLoc + (bytesPerCluster * (bootSector.rootDirectoryCluster - 2))
-
-        
 
         disk = open(diskO.diskPath, "rb")
         disk.seek(rootDirOffset)
@@ -68,7 +131,7 @@ class Recovery:
 
                 currentEntrySet.append(directory_tree.entries.FAT32Entry(data[currentOffset:currentOffset + 32]))
                 currentOffset += 32
-                
+
                 if not currentEntrySet[-1].isLongName:
                     if currentEntrySet[-1].isDir:
                         if not inRoot and numDirs < 2:
@@ -91,11 +154,27 @@ class Recovery:
         return deletedFiles
 
 
-    def exFATGetDeleted(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector):
+    def exFATGetDeleted(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector) -> list:
+
+        """
+        Gets a list of all deleted files in a exFAT filesystem.
+
+        Parameters
+        ----------
+        diskO : structures.disks.Disk
+            The disk object for the disk to recover from.
+        bootSector : strucures.boot_sector.BootSector
+            The boot sector objects associated with the disk.
+
+        Returns
+        -------
+        deletedFiles : list
+            A list of the deleted files.
+        """
 
         bytesPerCluster = bootSector.bytesPerSector * bootSector.sectorsPerCluster
 
-        firstClusterLoc = (bootSector.clusterHeapOffset * bootSector.bytesPerSector)         
+        firstClusterLoc = (bootSector.clusterHeapOffset * bootSector.bytesPerSector)
 
         rootDirOffset = firstClusterLoc + (bytesPerCluster * (bootSector.rootDirectoryCluster - 2))
 
@@ -105,7 +184,6 @@ class Recovery:
 
         dirSets = []
         deletedFiles = []
-
 
         while len(data) > 0:
 
@@ -131,8 +209,6 @@ class Recovery:
             data = []
             if len(dirSets) > 0:
                 dirSet = dirSets.pop(0)
-            
-
                 for clustRun in dirSet.clustRuns:
                     disk.seek((bytesPerCluster * (clustRun[0] - 2)) + firstClusterLoc)
                     data = disk.read(clustRun[1])
