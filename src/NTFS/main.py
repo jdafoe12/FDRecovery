@@ -70,9 +70,9 @@ class App:
 
             fileRecovery: recovery.recovery.Recovery = recovery.recovery.Recovery()
 
-            bootSector = structures.boot_sector.BootSector(self.currentDisk.diskName)
+            bootSector = structures.boot_sector.BootSector(self.currentDisk.disPath)
 
-            self.deletedFullRecords = fileRecovery.getDeletedFiles(self.currentDisk.diskName, bootSector)
+            self.deletedFullRecords = fileRecovery.getDeletedFiles(self.currentDisk.diskPath, bootSector)
             self.deletedFiles = []
             for record in self.deletedFullRecords:
                 self.deletedFiles.append(record[1])
@@ -102,7 +102,7 @@ class App:
 
 
     def recover(self):
-        
+
         fileRecovery = recovery.recovery.Recovery()
 
         toRecover = []
@@ -114,7 +114,7 @@ class App:
         for index in self.selectDeletedFiles2.curselection():
             toRecover.append(self.deletedFullRecords[(index) + ((len(self.deletedFiles) - ceil(len(self.deletedFiles) / 3)))])
 
-        self.numRecovered += fileRecovery.recoverFiles(self.currentDisk.diskName, toRecover, self.outputDirectory)
+        self.numRecovered += fileRecovery.recoverFiles(self.currentDisk.diskPath, toRecover, self.outputDirectory)
 
 
         self.selectDeletedFiles0.selection_clear(0, END)
