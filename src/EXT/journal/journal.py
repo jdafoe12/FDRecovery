@@ -7,7 +7,7 @@ from src.EXT import structures
 
 
 class JournalSuperBlock:
-    
+
     """
     Contains journal metadata
 
@@ -25,7 +25,7 @@ class JournalSuperBlock:
 
         self.blockSize: int = decoder.beBytesToDecimal(data, 12, 15)
 
-        # The JBD2_FEATURE_INCOMPAT_CSUM_V3 feature flag is set in 
+        # The JBD2_FEATURE_INCOMPAT_CSUM_V3 feature flag is set in
         # the fourth bit of byte 43 in the journal super block
         self.hasCSumV3: bool = data[43] & 0b00010000 == 16
 
@@ -53,7 +53,7 @@ class Transaction:
         dataBlocks[0] is an int - the block number.
         dataBlocks[1] is a string - the block type.
 
-    Methods 
+    Methods
     -------
     getBlocks(self, blockTypeMap: dict, data: bytes, journalSuperBlock: JournalSuperBlock, superBlock: super_block.SuperBlock) -> list
         Gets a list of all the blocks, stored as a tuple (blockNum, blockType).
@@ -94,7 +94,7 @@ class Transaction:
         # Transaction type 0 is deletion, 1 is useful, 2 is not useful
         self.transactionType = self.getTransactionType(self.dataBlocks)
 
-        
+
 
     def getTransactionType(self, dataBlocks: list) -> int:
 
@@ -108,7 +108,7 @@ class Transaction:
             The list of data blocks in the transaction.
             This algorithm looks at the type of block and the order they are in
             in order to determine transaction type.
-        
+
         Returns
         -------
         transactionType : int
@@ -128,16 +128,16 @@ class Transaction:
 
         if blockTypesInOrder[0:3] == ["unknownBlock", "iTableBlock", "unknownBlock"]:
             transactionType = 0
-        elif (numITableBlocks > 1 and (blockTypesInOrder[0] == "unknownBlock" or blockTypesInOrder[0] == "iTableBlock") 
+        elif (numITableBlocks > 1 and (blockTypesInOrder[0] == "unknownBlock" or blockTypesInOrder[0] == "iTableBlock")
         and "dBitmapBlock" in blockTypesInOrder):
             transactionType = 0
         elif numITableBlocks > 0:
             transactionType = 1
 
         return transactionType
-    
 
-    def getBlocks(self, blockTypeMap: dict, data: bytes, 
+
+    def getBlocks(self, blockTypeMap: dict, data: bytes,
     journalSuperBlock: JournalSuperBlock, superBlock: structures.super_block.SuperBlock) -> list:
 
         """
@@ -182,7 +182,7 @@ class Transaction:
             # in the descriptor block is spread across t_blocknr, and t_blocknr_high.
             # Otherwise, it is simply in t_blocknr.
             if superBlock.bit64:
-                blockNum: int = (decoder.beBytesToDecimal(data, offSet, offSet + 3) + 
+                blockNum: int = (decoder.beBytesToDecimal(data, offSet, offSet + 3) +
                 (decoder.beBytesToDecimal(data, offSet + 8, offSet + 11) * pow(2, 32)))
             else:
                 blockNum: int = decoder.beBytesToDecimal(data, offSet, offSet + 3)
@@ -195,13 +195,13 @@ class Transaction:
 
             UUIDFlag: bool = data[offSet + 7] & 0b00000010 == 0b00000010
             endFlag: bool = data[offSet + 7] & 0b00001000 == 0b00001000
-                
+
             if endFlag:
                 break
 
             offSet += modifier
 
-            # If the UUID flag is set, then the UUID in this block tag is the same as previos. 
+            # If the UUID flag is set, then the UUID in this block tag is the same as previos.
             # This reduces the size of the block tag by 16 bytes.
             if UUIDFlag:
                 offSet -= 16
@@ -218,7 +218,7 @@ class Transaction:
             transactionAsString += "Transaction Type: Other Useful (contains an inode table)\n\n"
         elif self.transactionType == 2:
             transactionAsString += "Transaction Type: Not Useful (does not contain an inode table)\n\n"
-        
+
         transactionAsString += "Transaction Data Block(s):\n"
         iteration = 0
         for block in self.dataBlocks:
@@ -235,4 +235,3 @@ class Transaction:
         transactionAsString += f"Commit Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.commitTime))}\n"
 
         return transactionAsString
-

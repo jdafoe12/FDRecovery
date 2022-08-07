@@ -49,13 +49,13 @@ class GroupDescriptor:
         # set group descriptor data fields.
 
         # In ext4, there are two fields for each of these values, lower order and higher order bytes.
-        if diskO.diskType == "ext4":
+        if diskO.diskType == "ext4" and superBlock.groupDescriptorSize == 64:
             self.inodeTableLoc: int = decoder.leBytesToDecimalLowerAndUpper(data, 8, 11, 40, 43)
             self.inodeBitMapLoc: int = decoder.leBytesToDecimalLowerAndUpper(data, 4, 7, 36, 39)
             self.blockBitMapLoc: int = decoder.leBytesToDecimalLowerAndUpper(data, 0, 3, 32, 35)
 
         # In ext2/3, there is only one field for each of these values
-        elif diskO.diskType == "ext3" or diskO.diskType == "ext2":
+        elif diskO.diskType == "ext3" or diskO.diskType == "ext2" or (diskO.diskType == "ext4" and not superBlock.bit64):
             self.inodeTableLoc: int = decoder.leBytesToDecimal(data, 8, 11)
             self.inodeBitMapLoc: int = decoder.leBytesToDecimal(data, 4, 7)
             self.blockBitMapLoc: int = decoder.leBytesToDecimal(data, 0, 3)

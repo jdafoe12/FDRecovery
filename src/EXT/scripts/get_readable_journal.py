@@ -3,13 +3,11 @@ from time import sleep
 import os
 import re
 
-import structures.disks
-import structures.read_inode
-import structures.super_block
+from src.EXT.structures import *
 
 def getReadableJournalCopy():
 
-    diskList = structures.disks.getDisks()
+    diskList = disks.getDisks()
 
     print("Available disks: ", end="")
 
@@ -25,7 +23,7 @@ def getReadableJournalCopy():
                 if diskName == disk.diskPath:
                     currentDisk = disk
 
-            superBlock = structures.super_block.SuperBlock(currentDisk)
+            superBlock = super_block.SuperBlock(currentDisk)
             break
         except UnboundLocalError:
             print("Invalid disk path, try again.")
@@ -40,9 +38,9 @@ def getReadableJournalCopy():
     timeDelayInSeconds = 0
 
     if numCopies > 1:
-        
+
         while True:
-            try: 
+            try:
                 timeDelayInSeconds = int(input("Time delay between copies (in seconds)? "))
                 break
             except ValueError:
@@ -65,8 +63,8 @@ def getReadableJournalCopy():
         drop_caches = open("/proc/sys/vm/drop_caches", "w")
         drop_caches.write("3")
         drop_caches.close()
-        
-        fileSystemJournalInode = structures.read_inode.Inode(currentDisk, superBlock.journalInode, superBlock, False, True)
+
+        fileSystemJournalInode = read_inode.Inode(currentDisk, superBlock.journalInode, superBlock, False, True)
 
         for entry in fileSystemJournalInode.entries:
             disk = open(currentDisk.diskPath, "rb")

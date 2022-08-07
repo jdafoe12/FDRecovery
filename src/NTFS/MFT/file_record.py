@@ -24,7 +24,7 @@ class FileRecord:
     Methods
     -------
     readAttributes(self, data: bytes, readPointers: bool)
-        reads the $DATA and $FILE_NAME attributes in the MFT file record.
+        Reads the $DATA and $FILE_NAME attributes in the MFT file record.
     """
 
     def __init__(self, data: bytes, bootSector: structures.boot_sector.BootSector, readPointers: bool, readAllAttr: bool):
@@ -52,6 +52,18 @@ class FileRecord:
 
 
     def readAttributes(self, data: bytes, readPointers: bool):
+
+        """
+        Reads the $DATA and $FILE_NAME attributes in the MFT file record.
+
+        Parameters
+        ----------
+        data : bytes
+            The data associated with the file record attributes
+        readPointers : bool
+            Indicates whether the data pointers should be read.
+        """
+
         decoder = common.decode.Decoder()
 
         currentByte = 0

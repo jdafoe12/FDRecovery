@@ -53,14 +53,18 @@ class SuperBlock:
         # used when reading journal descriptor blocks.
         if diskO.diskType == "ext4" or diskO.diskType == "ext3":
             self.journalInode: int = decoder.leBytesToDecimal(data, 224, 227)
-            self.bit64 = data[0x60] & 0b00010000 == 0b00010000
+            self.bit64 = data[0x60] & 0b10000000 == 0b10000000
 
         # ext4 has a group descriptor size specified in the super block.
         if diskO.diskType == "ext4":
-            self.hasExtent = (data[0x60] & 0b00000010) == 0b00000010
+            self.hasExtent = (data[0x60] & 0b01000000) == 0b01000000
             self.groupDescriptorSize: int = decoder.leBytesToDecimal(data, 254, 255)
-        # the group descriptor size for ext2 is always 32 bytes.
-        elif diskO.diskType == "ext3" or diskO.diskType == "ext2":
+
+        if diskO.diskType == "ext4" and self.bit64:
+            self.groupDescriptorSize: int = decoder.leBytesToDecimal(data, 254, 255)
+        # The group descriptor size for ext2/3 is always 32 bytes.
+        # If the bit64 flag is false in ext4, the group descriptor size is also 32.
+        elif diskO.diskType == "ext3" or diskO.diskType == "ext2" or (diskO.diskType == "ext4" and not self.bit64):
             self.groupDescriptorSize: int = 32
 
         self.inodeSize: int = decoder.leBytesToDecimal(data, 88, 89)

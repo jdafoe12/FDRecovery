@@ -1,10 +1,10 @@
 
 
-import structures.disks
-import journal.read_journal
+from src.EXT.structures import disks
+from src.EXT.journal import *
 
 def analyzeJournal():
-    diskList = structures.disks.getDisks()
+    diskList = disks.getDisks()
 
     print("Available disks: ", end="")
 
@@ -21,7 +21,7 @@ def analyzeJournal():
                 currentDisk = disk
 
         try:
-            readJournal = journal.read_journal.ReadJournal(currentDisk)
+            readJournal = read_journal.ReadJournal(currentDisk)
             break
         except UnboundLocalError:
             print("Invalid disk path, try again.")
@@ -68,8 +68,8 @@ def analyzeJournal():
                             break
                         except ValueError:
                             print("Invalid input. Please enter an integer value")
-                        
-                    
+
+
                     for i in range(journalTransactionNum, journalTransactionNum + readN):
                         for dashes in range(0, 150):
                             print("-", end="")
@@ -115,7 +115,7 @@ def analyzeJournal():
                         for dashes in range(0, 150):
                             print("-", end="")
                         print()
-                    
+
                     break
                 except IndexError:
                     print("Transaction number out of range, try again.")
