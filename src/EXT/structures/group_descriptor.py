@@ -1,4 +1,5 @@
 
+from math import ceil
 
 from src import common
 from src.EXT.structures import disks, super_block
@@ -36,7 +37,8 @@ class GroupDescriptor:
             This is necessary to locate the location of the group descriptor on disk
         """
         # A byte offset from the start of disk to the first block (in group 1) containing group descriptors.
-        groupDescriptorTableOffSet = (superBlock.blockSize * (superBlock.blocksPerGroup + 1))
+        superBlockBlockNum = ceil(2048 / superBlock.blockSize)
+        groupDescriptorTableOffSet = (superBlock.blockSize * (superBlock.blocksPerGroup + superBlockBlockNum))
 
         groupOffSet = groupNum * superBlock.groupDescriptorSize
 

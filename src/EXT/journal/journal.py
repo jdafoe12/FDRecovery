@@ -128,7 +128,7 @@ class Transaction:
 
         if blockTypesInOrder[0:3] == ["unknownBlock", "iTableBlock", "unknownBlock"]:
             transactionType = 0
-        elif (numITableBlocks > 1 and (blockTypesInOrder[0] == "unknownBlock" or blockTypesInOrder[0] == "iTableBlock")
+        elif (numITableBlocks > 1 and (blockTypesInOrder[0] == "unknownBlock") or (numITableBlocks > 1 and blockTypesInOrder[0] == "iTableBlock"
         and "dBitmapBlock" in blockTypesInOrder):
             transactionType = 0
         elif numITableBlocks > 0:
