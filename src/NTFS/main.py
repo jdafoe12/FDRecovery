@@ -70,7 +70,7 @@ class App:
 
             fileRecovery: recovery.recovery.Recovery = recovery.recovery.Recovery()
 
-            bootSector = structures.boot_sector.BootSector(self.currentDisk.disPath)
+            bootSector = structures.boot_sector.BootSector(self.currentDisk.diskPath)
 
             self.deletedFullRecords = fileRecovery.getDeletedFiles(self.currentDisk.diskPath, bootSector)
             self.deletedFiles = []

@@ -34,7 +34,9 @@ def getDisks()-> list:
 
     dl = "ABCDEFGHIJKLMNIPQRSTUVWXYZ"
 
-    for disk in disks:
+    drives = ["%s" % d for d in dl if os.path.exists("%s:" % d)]
+
+    for drive in drives:
         disk = open("\\\\.\\" + drive + ":", "rb")
         typeID = disk.read(7)
         typeID = typeID[3:7].decode()

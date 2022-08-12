@@ -109,6 +109,7 @@ class FileName:
         header = AttributeHeader(data, startByte)
 
         tempName = ""
+        self.name = ""
 
         self.lenName = data[startByte + (header.offSetToAttribute + 0x40)]
         try:
