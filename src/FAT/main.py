@@ -100,7 +100,7 @@ class App:
 
 
     def recover(self):
-        
+
         fileRecovery = recovery.recovery.Recovery()
 
         toRecover = []

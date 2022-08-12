@@ -8,7 +8,35 @@ from src.NTFS import MFT
 
 class Recovery:
 
+    """
+    Contains methods rirectly related to the file recovery process.
+
+    Methods
+    -------
+    recoverFiles(self, diskName, deletedFiles, outputDir)
+        Attempts to recover the files that the user has selected.
+    getDeletedFiles(self, diskName, bootSector: structures.boot_sector)
+        Gets a list of all deleted files, as recorded in the MFT.
+    """
+
     def recoverFiles(self, diskName, deletedFiles, outputDir):
+
+        """
+        Attempts to recover the files that the user has selected.
+
+        Parameters
+        ----------
+        diskName : str
+            The path of the disk currently in use.
+        deletedFiles : list
+            A list of the user selected files to recover.
+        outputDir : str
+            The path of the output directory.
+
+        Returns
+        -------
+        The number of recovered files
+        """
 
         bootSector = structures.boot_sector.BootSector(diskName)
 
@@ -28,9 +56,26 @@ class Recovery:
         recoveredFile.close
         disk.close
         return len(deletedFiles)
-    
-    
+
+
     def getDeletedFiles(self, diskName, bootSector: structures.boot_sector):
+
+        """
+        Gets a list of all deleted files, as recorded in the MFT.
+
+        Parameters
+        ----------
+        diskName : str
+            The path of the disk currently in use.
+        bootSector : structures.boot_sector.BootSector
+            The boot sector object associated with the disk.
+
+        Returns
+        -------
+        deletedFiles : list
+            A list of the deleted files.
+
+        """
 
         clusterSize = bootSector.sectorsPerCluster * bootSector.sectorSize
 
@@ -46,7 +91,7 @@ class Recovery:
         deletedFiles = []
 
         currentCluster = 0
-        while len(fileRecord.data.dataRuns) > 0: 
+        while len(fileRecord.data.dataRuns) > 0:
 
             currentRun = fileRecord.data.dataRuns.pop(0)
 
@@ -62,6 +107,5 @@ class Recovery:
                     if entry.header.isDeleted:
                         if entry.fileName is not False:
                             deletedFiles.append((entryData, entry.fileName.name))
-
 
         return deletedFiles

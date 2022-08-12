@@ -2,19 +2,6 @@ import os.path
 
 class Disk:
 
-    def __init__(self, diskName, diskType):
-        self.diskName = diskName
-    """
-    Contains data associated with a disk.
-
-    Attributes
-    ----------
-    diskPath : str
-        The file path of the disk.
-    diskType : str
-        The disk type (ext4, ext3, ext2).
-    """
-
     def __init__(self, diskPath: str, diskType: str):
 
         """

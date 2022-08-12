@@ -98,7 +98,10 @@ class FileName:
         """
         Parameters
         ----------
-
+        data : bytes
+            The bytes associated for the entire MFT entry.
+        startByte : int
+            The starting byte of the $FILE_NAME attribute.
         """
 
         decoder = common.decode.Decoder()
@@ -123,7 +126,27 @@ class FileName:
 
 class AttributeHeader:
 
+    """
+    Reads and stores the values associated with attribute headers.
+
+    Attributes
+    ----------
+    length : int
+        The length in bytes of the attribute.
+    offSetToAttribute : int
+        The offset from the beginning of the header to the attribute itself.
+    """
+
     def __init__(self, data: bytes, startByte):
+
+        """
+        Parameters
+        ----------
+        data : bytes
+            The bytes associated with the entire MFT entry.
+        startByte : int
+            The starting byte of the attribute header.
+        """
 
         decoder = common.decode.Decoder()
 
