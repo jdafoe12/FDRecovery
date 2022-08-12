@@ -2,6 +2,7 @@
 
 from src.FAT import structures
 from src.FAT import directory_tree
+from src.common import decode
 import os
 
 class Recovery:
@@ -117,31 +118,35 @@ class Recovery:
         disk.seek(rootDirOffset)
         data = disk.read(bytesPerCluster)
 
+        decoder = decode.Decoder
+
         dirSets = [] # this is a queue of FAT32EntrySet
         deletedFiles = [] # this is a list of FAT32EntrySet
 
         inRoot = True
         while len(data) > 0:
-            numDirs = 0
+            # Make sure the data is actually a directory, important of the dir was deleted.
+            if inRoot or decoder.beBytesToDecimal(self, data, 0, 2) == 3022880:
+                numDirs = 0
 
-            currentOffset = 0
-            currentEntrySet: list[directory_tree.entries.FAT32Entry] = [] # this is a stack
+                currentOffset = 0
+                currentEntrySet: list[directory_tree.entries.FAT32Entry] = [] # this is a stack
 
-            while currentOffset < len(data) and data[currentOffset] > 0:
+                while currentOffset < len(data) and data[currentOffset] > 0:
 
-                currentEntrySet.append(directory_tree.entries.FAT32Entry(data[currentOffset:currentOffset + 32]))
-                currentOffset += 32
+                    currentEntrySet.append(directory_tree.entries.FAT32Entry(data[currentOffset:currentOffset + 32]))
+                    currentOffset += 32
 
-                if not currentEntrySet[-1].isLongName:
-                    if currentEntrySet[-1].isDir:
-                        if not inRoot and numDirs < 2:
-                            pass
-                        else:
-                            dirSets.append(directory_tree.entry_set.FAT32EntrySet(diskO, bootSector, currentEntrySet))
-                        numDirs += 1
-                    elif currentEntrySet[-1].isDeleted:
-                        deletedFiles.append(directory_tree.entry_set.FAT32EntrySet(diskO, bootSector, currentEntrySet))
-                    currentEntrySet = []
+                    if not currentEntrySet[-1].isLongName:
+                        if currentEntrySet[-1].isDir:
+                            if not inRoot and numDirs < 2:
+                                pass
+                            else:
+                                dirSets.append(directory_tree.entry_set.FAT32EntrySet(diskO, bootSector, currentEntrySet))
+                            numDirs += 1
+                        elif currentEntrySet[-1].isDeleted:
+                            deletedFiles.append(directory_tree.entry_set.FAT32EntrySet(diskO, bootSector, currentEntrySet))
+                        currentEntrySet = []
 
             data = []
             if len(dirSets) > 0:

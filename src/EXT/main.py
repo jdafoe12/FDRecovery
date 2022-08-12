@@ -172,7 +172,7 @@ class App:
 
             self.currentDisk = disk
 
-            # ext3 and ext3 have journals, which are used for recovery
+            # ext4 and ext3 have journals, which are used for recovery
             if disk.diskType == "ext3" or disk.diskType == "ext4":
                 fileRecovery: recovery.recovery_journaled.FileRecoveryJournaled = recovery.recovery_journaled.FileRecoveryJournaled()
                 readJournal: journal.read_journal.ReadJournal = journal.read_journal.ReadJournal(self.currentDisk)
@@ -337,4 +337,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

@@ -144,9 +144,12 @@ class FAT32Entry:
         self.isLongName: bool = data[0x0B] & 0b00001111 == 0b00001111
         self.name: str = ""
         if self.isLongName:
-            self.name = data[0x01 : 0x0B].decode(encoding="utf-16", errors="strict")
-            self.name = self.name + data[0x0E : 0x1A].decode(encoding="utf-16", errors="strict")
-            self.name = self.name + data[0x1C : ].decode(encoding="utf-16", errors="strict")
+            try:
+                self.name = data[0x01 : 0x0B].decode(encoding="utf-16", errors="strict")
+                self.name = self.name + data[0x0E : 0x1A].decode(encoding="utf-16", errors="strict")
+                self.name = self.name + data[0x1C : ].decode(encoding="utf-16", errors="strict")
+            except UnicodeDecodeError:
+                self.name = "Name"
         else:
             decoder = common.decode.Decoder
 
@@ -156,4 +159,7 @@ class FAT32Entry:
             self.volLabelFlag: bool = attributes & 0b00001000 == 0b00001000
             self.dataLen: int = decoder.leBytesToDecimal(self, data, 0x1C, 0x1F)
             self.startingClust: int = decoder.leBytesToDecimalLowerAndUpper(self, data, 0x1A, 0x1B, 0x14, 0x15)
-            self.name = data[0x01 : 0x0B].decode()
+            try:
+                self.name = data[0x01 : 0x0B].decode()
+            except UnicodeDecodeError:
+                self.name = "Name"
