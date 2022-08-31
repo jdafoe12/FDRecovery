@@ -36,13 +36,17 @@ class Data:
 
         self.dataRuns = []
         currentIndex = decoder.leBytesToDecimal(data, startByte + 32, startByte + 32) + startByte
-        while currentIndex - startByte < attributeSize:
-            self.dataRuns.append(DataRun(data, currentIndex))
-            if self.dataRuns[-1].byteSize > 1:
-                currentIndex += self.dataRuns[-1].byteSize
-            else:
-                self.dataRuns.pop()
-                break
+
+        if not self.isResident:
+            while currentIndex - startByte < attributeSize:
+                self.dataRuns.append(DataRun(data, currentIndex))
+                if self.dataRuns[-1].byteSize > 1:
+                    currentIndex += self.dataRuns[-1].byteSize
+                else:
+                    self.dataRuns.pop()
+                    break
+        else:
+            self.fileData = data[startByte + 0x18 : startByte + attributeSize]
 
 
 class DataRun:

@@ -47,12 +47,16 @@ class Recovery:
             recoveredFile = open("%s/recoveredFile_%s" % (outputDir, file[1]), "wb")
 
             currentCluster = 0
-            while len(entry.data.dataRuns) > 0:
-                currentRun = entry.data.dataRuns.pop(0)
-                currentCluster = currentCluster + currentRun.startingCluster
-                for clusterNum in range(0, currentRun.numClusters):
-                    disk.seek((bootSector.sectorsPerCluster * (currentCluster + clusterNum)) * bootSector.sectorSize)
-                    recoveredFile.write(disk.read(bootSector.sectorSize * bootSector.sectorsPerCluster))
+            if not entry.data.isResident:
+                while len(entry.data.dataRuns) > 0:
+                    currentRun = entry.data.dataRuns.pop(0)
+                    currentCluster = currentCluster + currentRun.startingCluster
+                    for clusterNum in range(0, currentRun.numClusters):
+                        disk.seek((bootSector.sectorsPerCluster * (currentCluster + clusterNum)) * bootSector.sectorSize)
+                        recoveredFile.write(disk.read(bootSector.sectorSize * bootSector.sectorsPerCluster))
+            else:
+                recoveredFile.write(entry.data.fileData)
+                
         recoveredFile.close
         disk.close
         return len(deletedFiles)
