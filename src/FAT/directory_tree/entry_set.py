@@ -159,6 +159,7 @@ class EntrySet:
         disk = open(diskO.diskPath, "rb")
         disk.seek(fatOffset + clustOffset)
         data = disk.read(8)
+        disk.close()
 
         pointer = decoder.leBytesToDecimal(data, 0, 7)
 
@@ -213,29 +214,3 @@ class FAT32EntrySet:
         for char in tempName:
             if ord(char) > 0 and ord(char) <= 128:
                 self.name = self.name + char
-
-    #     # this is only relevent if the file has been deleted. will always be false otherwise
-    #     self.isFull = self.checkFull(diskO, bootSector, self.startingClust, self.dataLen)
-
-    # def checkFull(self, diskO: structures.disks.Disk, bootSector: structures.boot_sector.BootSector, startingClust, dataLen):
-
-    #     bytesPerCluster = bootSector.bytesPerSector * bootSector.sectorsPerCluster
-
-    #     fatOffset = (bootSector.bytesPerSector * bootSector.reservedSectors)
-    #     clustOffset = (startingClust) * 4
-    #     numClusters = ceil(dataLen / bytesPerCluster)
-
-    #     disk = open(diskO.diskPath, "rb")
-    #     # I have stumbled upon a very interesting phenomena. it seems to be the case that
-    #     # I cannot seek into anything before the first cluster in the data section.
-    #     # this read will still provide the desired offset.
-    #     disk.read(fatOffset + clustOffset)
-
-    #     for i in range(0, numClusters):
-    #         pointer = disk.read(4)
-    #         if pointer != 0 or pointer != 0xFFFF0F:
-    #             disk.close
-    #             return False
-    #         else:
-    #             disk.close
-    #             return True

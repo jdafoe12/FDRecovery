@@ -56,7 +56,7 @@ class Recovery:
                         recoveredFile.write(disk.read(bootSector.sectorSize * bootSector.sectorsPerCluster))
             else:
                 recoveredFile.write(entry.data.fileData)
-                
+
         recoveredFile.close
         disk.close
         return len(deletedFiles)
@@ -111,5 +111,5 @@ class Recovery:
                     if entry.header.isDeleted:
                         if entry.fileName is not False:
                             deletedFiles.append((entryData, entry.fileName.name))
-
+        disk.close()
         return deletedFiles

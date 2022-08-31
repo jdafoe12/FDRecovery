@@ -51,6 +51,7 @@ def getDisks() -> list:
     # /proc/mounts contains data on all mounted disk partitions
     mounts = open("/proc/mounts", "r")
     disks: list[str] = mounts.readlines()
+    mounts.close()
 
     goodDisks: list[Disk] = []
 
@@ -62,4 +63,3 @@ def getDisks() -> list:
             goodDisks.append(Disk(disk[0], disk[2]))
 
     return goodDisks
-

@@ -45,6 +45,7 @@ class GroupDescriptor:
         disk = open(diskO.diskPath, "rb")
         disk.seek(groupDescriptorTableOffSet + groupOffSet)
         data = disk.read(superBlock.groupDescriptorSize)
+        disk.close()
 
         decoder = common.decode.Decoder()
 

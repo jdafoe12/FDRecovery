@@ -40,6 +40,7 @@ def getDisks()-> list:
         disk = open("\\\\.\\" + drive + ":", "rb")
         typeID = disk.read(7)
         typeID = typeID[3:7].decode()
+        disk.close()
 
         disks.append(Disk("\\\\.\\" + drive + ":", typeID))
 

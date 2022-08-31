@@ -6,7 +6,7 @@ class Disk:
 
     """
     Contains data associated with a disk.
-    
+
     Attributes
     ----------
     diskPath : str
@@ -52,7 +52,6 @@ def getDisks()-> list:
     for drive in drives:
         disk = open("\\\\.\\" + drive + ":", "rb")
         typeID = disk.read(7)
-
         typeID = typeID[3:7].decode()
 
 
@@ -60,6 +59,7 @@ def getDisks()-> list:
             disk.seek(0x52)
             typeID = disk.read(5)
             typeID = typeID.decode()
+        disk.close()
 
 
         disks.append(Disk("\\\\.\\" + drive + ":", typeID))
