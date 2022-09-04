@@ -121,7 +121,6 @@ class FileRecoveryNoJournal:
                     deletedInodes.append((inodeNum, inode.deletionTime))
 
             for inodeNum in range(holes[1], superBlock.inodesPerGroup - (holes[1] - (iBitmap[1] * superBlock.inodesPerGroup))): # Fix this line?
-                print(inodeNum)
                 inode = structures.read_inode.Inode(diskO, inodeNum, superBlock, False, False)
 
                 if inode.deletionTime != 0:
