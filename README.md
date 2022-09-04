@@ -6,7 +6,7 @@ FDRecovery is a quick and easy to use data recovery tool which allows the user t
 
 First, make sure you have python3 installed:
 
-You can do this on windows here: https://www.python.org/downloads/ 
+You can do this on windows from the microsoft store or here: https://www.python.org/downloads/
 
 Most linux systems will already have python3 installed, but on debian based systems you can use this command:
 ```
