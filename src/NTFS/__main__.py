@@ -1,13 +1,16 @@
+
 import tkinter as tk
 from tkinter import END, filedialog
 from math import floor, ceil
 
-from src.FAT import recovery
-from src.FAT import structures
+from src.NTFS import recovery
+from src.NTFS import structures
 
 class App:
 
     def __init__(self, master: tk.Tk):
+
+        master.title("FDRecover")
 
         self.numRecovered: int = 0
 
@@ -16,7 +19,7 @@ class App:
 
         self.outputDirectory: str = ""
 
-        self.deletedEntrySets: list[tuple] = []
+        self.deletedFullRecords: list[tuple] = []
         self.deletedFiles: list[str] = []
 
         self.topFrame: tk.Frame = tk.Frame(master=master, height=50)
@@ -65,15 +68,16 @@ class App:
             self.topFrame.config(cursor="exchange")
             self.topFrame.update_idletasks()
 
-            self.currentDisk: structures.disks.Disk = disk
+            self.currentDisk = disk
 
             fileRecovery: recovery.recovery.Recovery = recovery.recovery.Recovery()
 
-            bootSector = structures.boot_sector.BootSector(self.currentDisk)
-            self.deletedEntrySets = fileRecovery.getDeletedFiles(self.currentDisk, bootSector)
+            bootSector = structures.boot_sector.BootSector(self.currentDisk.diskPath)
+
+            self.deletedFullRecords = fileRecovery.getDeletedFiles(self.currentDisk.diskPath, bootSector)
             self.deletedFiles = []
-            for set in self.deletedEntrySets:
-                self.deletedFiles.append(set.name)
+            for record in self.deletedFullRecords:
+                self.deletedFiles.append(record[1])
 
 
             self.updateBoxes()
@@ -106,13 +110,13 @@ class App:
         toRecover = []
 
         for index in self.selectDeletedFiles0.curselection():
-            toRecover.append(self.deletedEntrySets[index])
+            toRecover.append(self.deletedFullRecords[index])
         for index in self.selectDeletedFiles1.curselection():
-            toRecover.append(self.deletedEntrySets[(index) + floor(len(self.deletedFiles) / 3)])
+            toRecover.append(self.deletedFullRecords[(index) + floor(len(self.deletedFiles) / 3)])
         for index in self.selectDeletedFiles2.curselection():
-            toRecover.append(self.deletedEntrySets[(index) + ((len(self.deletedFiles) - ceil(len(self.deletedFiles) / 3)))])
+            toRecover.append(self.deletedFullRecords[(index) + ((len(self.deletedFiles) - ceil(len(self.deletedFiles) / 3)))])
 
-        self.numRecovered += fileRecovery.recoverFiles(self.currentDisk, toRecover, self.outputDirectory)
+        self.numRecovered += fileRecovery.recoverFiles(self.currentDisk.diskPath, toRecover, self.outputDirectory)
 
 
         self.selectDeletedFiles0.selection_clear(0, END)

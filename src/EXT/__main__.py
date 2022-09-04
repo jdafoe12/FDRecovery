@@ -88,6 +88,8 @@ class App:
             The master window for the GUI
         """
 
+        master.title("FDRecover")
+
         # initialize attributes
         self.numRecovered: int = 0
         self.transactions: list[journal.journal.Transaction] = None
