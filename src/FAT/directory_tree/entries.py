@@ -39,7 +39,7 @@ class FileDirEntry:
 
         attributes = data[4:6]
 
-        self.isDir: bool = attributes[0] & 0b00010000 == 0b0001000
+        self.isDir: bool = attributes[0] & 0b00010000 == 0b00010000
 
 class StreamExtEntry:
 

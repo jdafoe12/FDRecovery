@@ -41,13 +41,13 @@ class BootSector:
 
         disk = open(diskO.diskPath, "rb")
         data = disk.read(512)
-        disk.close
+        disk.close()
 
         if diskO.diskType == "EXFA":
             self.fatOffset: int = decoder.leBytesToDecimal(data, 0x50, 0x53)
             self.clusterHeapOffset: int = decoder.leBytesToDecimal(data, 0x58, 0x5B)
             self.rootDirectoryCluster: int = decoder.leBytesToDecimal(data, 0x60, 0x63)
-            self.bytesPerSecter: int = pow(2, decoder.leBytesToDecimal(data, 0x6C, 0x6C))
+            self.bytesPerSector: int = pow(2, decoder.leBytesToDecimal(data, 0x6C, 0x6C))
             self.sectorsPerCluster: int = pow(2, decoder.leBytesToDecimal(data, 0x6D, 0x6D))
         elif diskO.diskType == "FAT32":
             self.bytesPerSector: int = decoder.leBytesToDecimal(data, 0x0B, 0x0C)

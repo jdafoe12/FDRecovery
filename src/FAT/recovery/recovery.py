@@ -63,8 +63,8 @@ class Recovery:
                 disk.seek(bytesPerCluster * (file.startingClust - 2) + firstClusterLoc)
                 recoveredFile.write(disk.read(file.dataLen))
 
-            disk.close
-            recoveredFile.close
+            disk.close()
+            recoveredFile.close()
 
         return len(deletedFiles)
 
@@ -154,7 +154,7 @@ class Recovery:
                 dirSet = dirSets.pop(0)
                 disk.seek((bytesPerCluster * (dirSet.startingClust - 2)) + firstClusterLoc)
                 data = disk.read(bytesPerCluster)
-        disk.close
+        disk.close()
 
         return deletedFiles
 
@@ -194,17 +194,23 @@ class Recovery:
 
             currentOffset = 0
 
-            numSeconds = data[1]
+            while currentOffset + 32 <= len(data) and data[currentOffset] > 0:
 
-            while currentOffset < len(data) and data[currentOffset] > 0:
+                entryType = data[currentOffset]
+
+                if entryType != 0x85 and entryType != 0x05:
+                    currentOffset += 32
+                    continue
 
                 numSeconds = data[currentOffset + 1]
-                while numSeconds == 0:
-                    currentOffset += 32
-                    numSeconds = data[currentOffset + 1]
+                entrySetSize = 32 * (numSeconds + 1)
 
-                entrySet = directory_tree.entry_set.EntrySet(data[currentOffset : currentOffset + (32 * (numSeconds + 1))], diskO, bootSector, True)
-                currentOffset += 32 * (numSeconds + 1)
+                if numSeconds == 0 or currentOffset + entrySetSize > len(data):
+                    currentOffset += 32
+                    continue
+
+                entrySet = directory_tree.entry_set.EntrySet(data[currentOffset : currentOffset + entrySetSize], diskO, bootSector, True)
+                currentOffset += entrySetSize
 
                 if entrySet.fileDirEntry.isDir:
                     dirSets.append(entrySet)
@@ -217,5 +223,5 @@ class Recovery:
                 for clustRun in dirSet.clustRuns:
                     disk.seek((bytesPerCluster * (clustRun[0] - 2)) + firstClusterLoc)
                     data = disk.read(clustRun[1])
-        disk.close
+        disk.close()
         return deletedFiles

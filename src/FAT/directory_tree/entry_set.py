@@ -78,7 +78,7 @@ class EntrySet:
 
 
             if readPointers:
-                self.clustRuns = self.getClustRuns(diskO.diskPath, bootSector)
+                self.clustRuns = self.getClustRuns(diskO, bootSector)
         else:
             return
 
@@ -125,7 +125,7 @@ class EntrySet:
                         runSize += clusterSize
                         prevClust = currentClust
                         # Note: it seems inneficient to do this one pointer at a time.
-                        currentClust = self.getFatPointer(diskO.diskPath, bootSector, currentClust)
+                        currentClust = self.getFatPointer(diskO, bootSector, currentClust)
 
                 clustRuns.append((firstRunClust, runSize))
 
